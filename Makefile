@@ -46,16 +46,5 @@ start:
 stop:
 	-./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node stop
 
-reset: stop
-	cp -f .env ./_build/$(PROFILE)/rel/blockchain_node/
-	rm -rf ./_build/$(PROFILE)/rel/blockchain_node/data/ledger.db
-	rm -rf ./_build/$(PROFILE)/rel/blockchain_node/data/transactions.db
-	rm -rf ./_build/$(PROFILE)/rel/blockchain_node/log/*
-
-resync: stop
-	rm -rf ./_build/$(PROFILE)/rel/blockchain_node/data/ledger.db
-	rm -rf ./_build/$(PROFILE)/rel/blockchain_node/data/transactions.db
-	rm -rf ./_build/$(PROFILE)/rel/blockchain_node/log/*
-
 console:
 	./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node remote_console
