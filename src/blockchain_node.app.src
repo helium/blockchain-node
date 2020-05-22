@@ -1,0 +1,32 @@
+%% -*- erlang -*-
+{application, blockchain_node,
+ [
+   {description, "A Helium Blockchain Node"},
+   {vsn, "0.1.0"},
+   {registered, []},
+   {mod, {blockchain_node_app, []}},
+   {
+    applications,
+    [
+     kernel,
+     stdlib,
+     syntax_tools,
+     compiler,
+     lager,
+     jsone,
+     elli,
+     jsonrpc2,
+     base64url,
+     pbkdf2,
+     observer_cli,
+     clique,
+     recon
+    ]
+   },
+   {included_applications, [blockchain]},
+   {env, []},
+   {modules, []},
+   {licenses, ["Apache 2.0"]},
+   {links, []}
+ ]
+}.
