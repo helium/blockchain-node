@@ -45,8 +45,8 @@ follower_height(#state{db=DB, default=DefaultCF}) ->
             Height;
         not_found ->
             0;
-        Error ->
-            throw(Error)
+        {error, _}=Error ->
+            ?jsonrpc_error(Error)
     end.
 
 load_chain(_Chain, State=#state{}) ->
@@ -74,11 +74,13 @@ handle_rpc(<<"get_transaction">>, [Param]) ->
         {ok, Txn} ->
             blockchain_txn:to_json(Txn, []);
         {error, not_found} ->
-            throw({invalid_params, Param})
+            ?jsonrpc_error({not_found, "No transaction: ~p", [Param]});
+        {error, _}=Error ->
+            ?jsonrpc_error(Error)
     end;
 
 handle_rpc(_, _) ->
-    throw(method_not_found).
+    ?jsonrpc_error(method_not_found).
 
 %%
 %% api

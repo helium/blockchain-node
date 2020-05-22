@@ -3,6 +3,9 @@
 -callback handle_rpc(Method::binary(), Params::list()) -> jsone:json().
 
 -export([handle/2, handle_event/3]).
+-export([jsonrpc_b58_to_bin/1, jsonrpc_error/1]).
+
+-include("bn_jsonrpc.hrl").
 
 -include_lib("elli/include/elli.hrl").
 -behaviour(elli_handler).
@@ -34,7 +37,7 @@ handle_rpc(<<"wallet_", _/binary>>=Method, Params) ->
     bn_wallets:handle_rpc(Method, Params);
 
 handle_rpc(_, _) ->
-    throw(method_not_found).
+    ?jsonrpc_error(method_not_found).
 
 
 %% @doc Handle request events, like request completed, exception
@@ -55,6 +58,47 @@ handle_event(request_error, [Req, Error, Stack], _Config) ->
 handle_event(_, _, _) ->
     ok.
 
+%%
+%% Param conversion
+%%
+jsonrpc_b58_to_bin(B58) ->
+    try
+        ?B58_TO_BIN(B58)
+    catch
+        _:_ -> ?jsonrpc_error(invalid_params)
+    end.
+
+%%
+%% Errors
+%%
+-define(throw_error(C,L), throw({jsonrpc2, C, iolist_to_binary((L))})).
+-define(throw_error(C,F,A), throw({jsonrpc2, C, iolist_to_binary(io_lib:format((F),(A)))})).
+
+-define(ERR_NOT_FOUND,        -100).
+-define(ERR_INVALID_PASSWORD, -110).
+-define(ERR_ERROR,            -150).
+
+-spec jsonrpc_error(term()) -> no_return().
+jsonrpc_error(method_not_found=E) ->
+    throw(E);
+
+jsonrpc_error(invalid_params=E) ->
+    throw(E);
+jsonrpc_error({invalid_params, _}=E) ->
+    throw(E);
+
+jsonrpc_error({not_found, F, A}) ->
+    ?throw_error(?ERR_NOT_FOUND, F, A);
+jsonrpc_error({not_found, M}) ->
+    ?throw_error(?ERR_NOT_FOUND, M);
+
+jsonrpc_error(invalid_password) ->
+    ?throw_error(?ERR_INVALID_PASSWORD, "Invalid password");
+
+jsonrpc_error({error, F, A}) ->
+    ?throw_error(?ERR_ERROR, F, A);
+jsonrpc_error({error, E}) ->
+    jsonrpc_error({error, "~p", E}).
 
 %%
 %% Internal

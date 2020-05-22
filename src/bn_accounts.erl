@@ -11,7 +11,7 @@
 %%
 
 handle_rpc(<<"account_get">>, [Param]) ->
-    Address = ?B58_TO_BIN(Param),
+    Address = ?jsonrpc_b58_to_bin(Param),
     Ledger = blockchain:ledger(blockchain_worker:blockchain()),
     GetBalance = fun() ->
                          case blockchain_ledger_v1:find_entry(Address, Ledger) of
@@ -58,4 +58,4 @@ handle_rpc(<<"account_get">>, [Param]) ->
                 [GetBalance, GetSecurities, GetDCs]);
 
 handle_rpc(_, _) ->
-    throw(method_not_found).
+    ?jsonrpc_error(method_not_found).

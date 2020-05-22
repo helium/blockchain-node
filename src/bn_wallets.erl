@@ -58,16 +58,21 @@ init(Args) ->
     end.
 
 handle_call({unlock, Address, Password}, _From, State) ->
-    case get_wallet(Address, State) of
-        {error, Error} ->
-            {reply, {error, Error}, State};
-        {ok, Wallet} ->
-            case wallet:decrypt(Password, Wallet) of
+    case maps:is_key(Address, State#state.keys) of
+        true ->
+            {reply, ok, State};
+        false ->
+            case get_wallet(Address, State) of
                 {error, Error} ->
                     {reply, {error, Error}, State};
-                {ok, KeyMap} ->
-                    timer:send_after(?KEY_TIMEOUT, self(), {key_timeout, Address}),
-                    {reply, ok, State#state{keys=maps:put(Address, KeyMap, State#state.keys)}}
+                {ok, Wallet} ->
+                    case wallet:decrypt(Password, Wallet) of
+                        {error, Error} ->
+                            {reply, {error, Error}, State};
+                        {ok, KeyMap} ->
+                            timer:send_after(?KEY_TIMEOUT, self(), {key_timeout, Address}),
+                            {reply, ok, State#state{keys=maps:put(Address, KeyMap, State#state.keys)}}
+                    end
             end
     end;
 handle_call({lock, Address}, _From, State) ->
@@ -118,67 +123,67 @@ terminate(_Reason, #state{db=DB}) ->
 %% jsonrpc_handler
 %%
 
--define(BACKUP_RESTORE_ERROR, -32000).
--define(BACKUP_DELETE_ERROR,  -32001).
-
-
 handle_rpc(<<"wallet_create">>, [Password]) when is_binary(Password) andalso byte_size(Password) > 0 ->
     {ok, State} = get_state(),
     {ok, Wallet} = wallet:new(Password),
     ok = save_wallet(Wallet, State),
     ?BIN_TO_B58(wallet:pubkey_bin(Wallet));
-handle_rpc(<<"wallet_create">>, Params) ->
-    throw({invalid_params, Params});
+handle_rpc(<<"wallet_create">>, _Params) ->
+    ?jsonrpc_error(invalid_password);
 
 handle_rpc(<<"wallet_list">>, _Params) ->
     {ok, State} = get_state(),
     [?BIN_TO_B58(Addr) || Addr <- get_wallet_list(State)];
 
 handle_rpc(<<"wallet_unlock">>, [Address, Password]) ->
-    case unlock(?B58_TO_BIN(Address), Password) of
-        {error, _Error} ->
-            throw(invalid_params);
+    case unlock(?jsonrpc_b58_to_bin(Address), Password) of
+        {error, not_found} ->
+            ?jsonrpc_error({not_found, "Wallet not found"});
+        {error, decrypt} ->
+            ?jsonrpc_error(invalid_password);
         ok ->
-            Address
+            true
     end;
 handle_rpc(<<"wallet_lock">>, [Address]) ->
-    ok = lock(?B58_TO_BIN(Address)),
+    ok = lock(?jsonrpc_b58_to_bin(Address)),
     true;
 handle_rpc(<<"wallet_is_locked">>, [Address]) ->
-    is_locked(?B58_TO_BIN(Address));
+    is_locked(?jsonrpc_b58_to_bin(Address));
 
 handle_rpc(<<"wallet_backup_list">>, [Path]) ->
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
     {ok, Info} = rocksdb:get_backup_info(Engine),
     Info;
-
 handle_rpc(<<"wallet_backup_create">>, [Path, NumBackupToKeep]) ->
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
     {ok, #state{db=DB}} = get_state(),
     ok = rocksdb:create_new_backup(Engine, DB),
     ok = rocksdb:purge_old_backup(Engine, NumBackupToKeep),
     {ok, Info} = rocksdb:get_backup_info(Engine),
-    Info;
+    LastBackup = hd(Info),
+    LastBackup;
 handle_rpc(<<"wallet_backup_delete">>, [Path, BackupID]) ->
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
     case rocksdb:delete_backup(Engine, BackupID) of
         ok ->
             true;
-        {error, Error} ->
-            throw({jsonrpc2, ?BACKUP_DELETE_ERROR, iolist_to_binary(io_lib:format("~p", [Error]))})
+        {error, not_found} ->
+            ?jsonrpc_error({not_found, "Backup not found: ~p", [BackupID]});
+        {error, _}=Error ->
+            ?jsonrpc_error(Error)
     end;
-
-
 handle_rpc(<<"wallet_backup_restore">>, [Path, BackupID]) ->
     case restore(binary_to_list(Path), BackupID) of
         ok ->
             true;
-        {error, Error} ->
-            throw({jsonrpc2, ?BACKUP_RESTORE_ERROR, iolist_to_binary(io_lib:format("~p", [Error]))})
+        {error, not_found} ->
+            ?jsonrpc_error({not_found, "Backup not found: ~p", [BackupID]});
+        {error, _}=Error ->
+            ?jsonrpc_error(Error)
     end;
 
 handle_rpc(_, _) ->
-    throw(method_not_found).
+    ?jsonrpc_error(method_not_found).
 
 
 %%

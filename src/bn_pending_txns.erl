@@ -2,6 +2,8 @@
 
 -behavior(blockchain_follower).
 
+-include("bn_jsonrpc.hrl").
+
 %% blockchain_follower
 -export([requires_sync/0, requires_ledger/0,
          init/1, follower_height/1, load_chain/2, load_block/5, terminate/2]).
@@ -46,8 +48,8 @@ follower_height(#state{db=DB, default=DefaultCF}) ->
             Height;
         not_found ->
             0;
-        Error ->
-            throw(Error)
+        {error, _}=Error ->
+            ?jsonrpc_error(Error)
     end.
 
 load_chain(_Chain, State=#state{}) ->
