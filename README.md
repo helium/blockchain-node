@@ -1,6 +1,6 @@
 # blockchain-etl
 
-[![Build status](https://badge.buildkite.com/a1f6f5135577f0039b6bd6821d5c8f87466ff9c024dbf4a60b.svg)](https://buildkite.com/helium/blockchain-etl)
+[![Build status](https://badge.buildkite.com/8f80e5ba2dd64290fb11c5126477a023b0ea75d35f08783085.svg?branch=master)](https://buildkite.com/helium/blockchain-node)
 
 This is an Erlang application that is a Helium Blockchain node. It
 follows the blockchain and exposes functionality using a jsonrpc API.
