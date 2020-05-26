@@ -7,6 +7,8 @@
 %% blockchain_follower
 -export([requires_sync/0, requires_ledger/0,
          init/1, follower_height/1, load_chain/2, load_block/5, terminate/2]).
+%% jsonrpc
+-export([handle_rpc/2]).
 %% API
 -export([submit_txn/1, get_txn_status/1]).
 
@@ -65,6 +67,27 @@ load_block(_Hash, Block, _Sync, _Ledger, State=#state{db=DB, default=DefaultCF})
 
 terminate(_Reason, #state{db=DB}) ->
     rocksdb:close(DB).
+
+%%
+%% jsonrpc_handler
+%%
+
+handle_rpc(<<"pending_transaction_status">>, [Param]) ->
+    Hash = ?jsonrpc_b64_to_bin(Param),
+    {ok, State} = get_state(),
+    case get_txn_status(Hash, State) of
+        {ok, pending} ->
+            <<"pending">>;
+        {ok, {cleared, _}} ->
+            <<"cleared">>;
+        {ok, {failed, Reason}} ->
+            Reason;
+        {error, not_found} ->
+            <<"not_found">>
+    end;
+
+handle_rpc(_, _) ->
+    ?jsonrpc_error(method_not_found).
 
 %%
 %% API

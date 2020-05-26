@@ -29,6 +29,10 @@
 unlock(Address, Password) ->
     gen_server:call(?SERVER, {unlock, Address, Password}).
 
+-spec sign(libp2p_crypto:pubkey_bin(), blockchain_txn:txn()) -> {ok, blockchain_txn:txn()} | {error, term()}.
+sign(Address, Txn) ->
+    gen_server:call(?SERVER, {sign, Address, Txn}).
+
 -spec lock(libp2p_crypto:pubkey_bin()) -> ok.
 lock(Address) ->
     gen_server:call(?SERVER, {lock, Address}).
@@ -79,6 +83,15 @@ handle_call({lock, Address}, _From, State) ->
     {reply, ok, State#state{keys=maps:remove(Address, State#state.keys)}};
 handle_call({is_locked, Address}, _From, State) ->
     {reply, not maps:is_key(Address, State#state.keys), State};
+
+handle_call({sign, Address, Txn}, _From, State) ->
+    case maps:get(Address, State#state.keys, false) of
+        false ->
+            {reply, {error, not_found}, State};
+        #{secret := PrivKey} ->
+            SigFun = libp2p_crypto:mk_sig_fun(PrivKey),
+            {reply, {ok, blockchain_txn:sign(Txn, SigFun)}, State}
+    end;
 
 handle_call({restore, Path, BackupID}, _From, State) ->
     {ok, Engine} = rocksdb:open_backup_engine(Path),
@@ -150,6 +163,46 @@ handle_rpc(<<"wallet_lock">>, [Address]) ->
 handle_rpc(<<"wallet_is_locked">>, [Address]) ->
     is_locked(?jsonrpc_b58_to_bin(Address));
 
+
+handle_rpc(<<"wallet_pay">>, [Address, PayeeStr, Amount]) ->
+    Payer = ?jsonrpc_b58_to_bin(Address),
+    Payee = ?jsonrpc_b58_to_bin(PayeeStr),
+    {ok, Txn} = mk_payment_txn_v1(Payer, Payee, Amount),
+    case sign(Payer, Txn) of
+        {ok, SignedTxn} ->
+            {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
+            blockchain_txn:to_json(SignedTxn, []);
+        {error, not_found} ->
+            ?jsonrpc_error({not_found, "Wallet is locked"})
+    end;
+handle_rpc(<<"wallet_pay">>, [Address, PaymentList]) when is_list(PaymentList) ->
+    Payer = ?jsonrpc_b58_to_bin(Address),
+    Payments = lists:map(fun([Payee, Amount]) ->
+                                 {?jsonrpc_b58_to_bin(Payee), Amount}
+                         end, PaymentList),
+    {ok, Txn} = mk_payment_txn_v2(Payer, Payments),
+    case sign(Payer, Txn) of
+        {ok, SignedTxn} ->
+            {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
+            blockchain_txn:to_json(SignedTxn, []);
+        {error, not_found} ->
+            ?jsonrpc_error({not_found, "Wallet is locked"})
+    end;
+
+handle_rpc(<<"wallet_export">>, [Address, Path]) ->
+    {ok, State} = get_state(),
+    case get_wallet(?jsonrpc_b58_to_bin(Address), State) of
+        {error, not_found} ->
+            ?jsonrpc_error({not_found, "Wallet not found"});
+        {ok, Wallet} ->
+            {ok, WalletBin} = wallet:to_binary(Wallet),
+            case file:write_file(Path, WalletBin) of
+                ok -> true;
+                {error, _}=Error ->
+                    ?jsonrpc_error(Error)
+            end
+    end;
+
 handle_rpc(<<"wallet_backup_list">>, [Path]) ->
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
     {ok, Info} = rocksdb:get_backup_info(Engine),
@@ -189,6 +242,31 @@ handle_rpc(_, _) ->
 %%
 %% Internal
 %%
+-spec mk_payment_txn_v1(Payer::libp2p_crypto:pubkey_bin(), Payee::libp2p_crypto:pubkey_bin(), Bones::pos_integer())
+                       -> {ok, blockchain_txn:txn()} | {error, term()}.
+mk_payment_txn_v1(Payer, Payee, Amount) ->
+    Ledger = blockchain:ledger(blockchain_worker:blockchain()),
+    Nonce = case blockchain_ledger_v1:find_entry(Payer, Ledger) of
+                {ok, Entry} ->
+                    blockchain_ledger_entry_v1:nonce(Entry) + 1;
+                {error, _} -> 0
+            end,
+    Fee = 0,
+    {ok, blockchain_txn_payment_v1:new(Payer, Payee, Amount, Fee, Nonce)}.
+
+-spec mk_payment_txn_v2(Payer::libp2p_crypto:pubkey_bin(), [{Payee::libp2p_crypto:pubkey_bin(), Bones::pos_integer()}])
+                       -> {ok, blockchain_txn:txn()} | {error, term()}.
+mk_payment_txn_v2(Payer, PaymentList) ->
+    Ledger = blockchain:ledger(blockchain_worker:blockchain()),
+    Nonce = case blockchain_ledger_v1:find_entry(Payer, Ledger) of
+                {ok, Entry} ->
+                    blockchain_ledger_entry_v1:nonce(Entry) + 1;
+                {error, _} -> 0
+            end,
+    Fee = 0,
+    Payments = [blockchain_payment_v2:new(Payee, Bones) || {Payee, Bones} <- PaymentList],
+    {ok, blockchain_txn_payment_v2:new(Payer, Payments, Nonce, Fee)}.
+
 get_state() ->
     case persistent_term:get(?MODULE, false) of
         false ->

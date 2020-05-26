@@ -67,8 +67,8 @@ terminate(_Reason, #state{db=DB}) ->
 %% jsonrpc_handler
 %%
 
-handle_rpc(<<"get_transaction">>, [Param]) ->
-    Hash = ?B64_TO_BIN(Param),
+handle_rpc(<<"transaction_get">>, [Param]) ->
+    Hash = ?jsonrpc_b64_to_bin(Param),
     {ok, State} = get_state(),
     case get_transaction(Hash, State) of
         {ok, Txn} ->

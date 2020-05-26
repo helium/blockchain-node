@@ -10,7 +10,7 @@ handle_rpc(<<"block_height">>, _Params) ->
 
 handle_rpc(<<"block_get">>, [Param]) ->
     HeightOrHash = case Param of
-                       V when is_binary(V) -> ?B64_TO_BIN(V);
+                       V when is_binary(V) -> ?jsonrpc_b64_to_bin(V);
                        V when is_integer(V) -> V;
                        _ -> ?jsonrpc_error({invalid_params, Param})
                    end,

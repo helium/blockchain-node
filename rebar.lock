@@ -4,7 +4,7 @@
  {<<"base64url">>,{pkg,<<"base64url">>,<<"1.0.1">>},0},
  {<<"blockchain">>,
   {git,"https://github.com/helium/blockchain-core.git",
-       {ref,"65d0d83117b51aae1e01c1bfb6823e077d45816b"}},
+       {ref,"c59b1f173844b75600e6f412b068041ac5580522"}},
   0},
  {<<"clique">>,
   {git,"https://github.com/helium/clique.git",
@@ -80,7 +80,7 @@
  {<<"procket">>,{pkg,<<"procket">>,<<"0.9.3">>},3},
  {<<"ranch">>,{pkg,<<"ranch">>,<<"1.5.0">>},2},
  {<<"rand_compat">>,{pkg,<<"rand_compat">>,<<"0.0.3">>},3},
- {<<"recon">>,{pkg,<<"recon">>,<<"2.5.0">>},0},
+ {<<"recon">>,{pkg,<<"recon">>,<<"2.5.1">>},0},
  {<<"relcast">>,
   {git,"https://github.com/helium/relcast.git",
        {ref,"d9f9db30aeede1344d31c75c24320710e5ba7cc2"}},
@@ -126,7 +126,7 @@
  {<<"procket">>, <<"593E907645307BC854CE3532F3F9C07987D8DC9848180CD2EE408FD92B22CC1E">>},
  {<<"ranch">>, <<"F04166F456790FEE2AC1AA05A02745CC75783C2BFB26D39FAF6AEFC9A3D3A58A">>},
  {<<"rand_compat">>, <<"011646BC1F0B0C432FE101B816F25B9BBB74A085713CEE1DAFD2D62E9415EAD3">>},
- {<<"recon">>, <<"2F7FCBEC2C35034BADE2F9717F77059DC54EB4E929A3049CA7BA6775C0BD66CD">>},
+ {<<"recon">>, <<"430FFA60685AC1EFDFB1FE4C97B8767C92D0D92E6E7C3E8621559BA77598678A">>},
  {<<"small_ints">>, <<"82A824C8794A2DDC73CB5CD00EAD11331DB296521AD16A619C13D668572B868A">>},
  {<<"throttle">>, <<"E881B46D9836AFB70F3E2FA3BE9B0140805BA324ED26AA734FF6C5C1568C6CA7">>}]}
 ].

@@ -3,7 +3,9 @@
 -callback handle_rpc(Method::binary(), Params::list()) -> jsone:json().
 
 -export([handle/2, handle_event/3]).
--export([jsonrpc_b58_to_bin/1, jsonrpc_error/1]).
+-export([jsonrpc_b58_to_bin/1,
+         jsonrpc_b64_to_bin/1,
+         jsonrpc_error/1]).
 
 -include("bn_jsonrpc.hrl").
 
@@ -29,6 +31,9 @@ handle_rpc(<<"block_", _/binary>>=Method, Params) ->
 
 handle_rpc(<<"transaction_", _/binary>>=Method, Params) ->
     bn_txns:handle_rpc(Method, Params);
+
+handle_rpc(<<"pending_transaction_", _/binary>>=Method, Params) ->
+    bn_pending_txns:handle_rpc(Method, Params);
 
 handle_rpc(<<"account_", _/binary>>=Method, Params) ->
     bn_accounts:handle_rpc(Method, Params);
@@ -64,6 +69,13 @@ handle_event(_, _, _) ->
 jsonrpc_b58_to_bin(B58) ->
     try
         ?B58_TO_BIN(B58)
+    catch
+        _:_ -> ?jsonrpc_error(invalid_params)
+    end.
+
+jsonrpc_b64_to_bin(B64) ->
+    try
+        ?B64_TO_BIN(B64)
     catch
         _:_ -> ?jsonrpc_error(invalid_params)
     end.
