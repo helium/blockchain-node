@@ -1,4 +1,4 @@
-# blockchain-etl
+# blockchain-node
 
 [![Build status](https://badge.buildkite.com/8f80e5ba2dd64290fb11c5126477a023b0ea75d35f08783085.svg?branch=master)](https://buildkite.com/helium/blockchain-node)
 
@@ -18,7 +18,7 @@ follows the blockchain and exposes functionality using a jsonrpc API.
 Once started the application will start syncing the blockchain and
 loading blocks. If this is done from scrath it can take a number of
 days to download all blocks from the network and aobsorb them in the
-localq ledger.
+localledger.
 
 ### File Descriptors
 
