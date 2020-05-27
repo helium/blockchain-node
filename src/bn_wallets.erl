@@ -136,20 +136,24 @@ terminate(_Reason, #state{db=DB}) ->
 %% jsonrpc_handler
 %%
 
-handle_rpc(<<"wallet_create">>, [Password]) when is_binary(Password) andalso byte_size(Password) > 0 ->
+handle_rpc(<<"wallet_create">>, {Param}) ->
+    Password = case ?jsonrpc_get_param(<<"password">>, Param) of
+                   V when is_binary(V) andalso byte_size(V) > 0 -> V;
+                   _ -> ?jsonrpc_error(invalid_params)
+               end,
     {ok, State} = get_state(),
     {ok, Wallet} = wallet:new(Password),
     ok = save_wallet(Wallet, State),
     ?BIN_TO_B58(wallet:pubkey_bin(Wallet));
-handle_rpc(<<"wallet_create">>, _Params) ->
-    ?jsonrpc_error(invalid_password);
 
 handle_rpc(<<"wallet_list">>, _Params) ->
     {ok, State} = get_state(),
     [?BIN_TO_B58(Addr) || Addr <- get_wallet_list(State)];
 
-handle_rpc(<<"wallet_unlock">>, [Address, Password]) ->
-    case unlock(?jsonrpc_b58_to_bin(Address), Password) of
+handle_rpc(<<"wallet_unlock">>, {Param}) ->
+    Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
+    Password = ?jsonrpc_get_param(<<"password">>, Param),
+    case unlock(Address, Password) of
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Wallet not found"});
         {error, decrypt} ->
@@ -157,16 +161,19 @@ handle_rpc(<<"wallet_unlock">>, [Address, Password]) ->
         ok ->
             true
     end;
-handle_rpc(<<"wallet_lock">>, [Address]) ->
-    ok = lock(?jsonrpc_b58_to_bin(Address)),
+handle_rpc(<<"wallet_lock">>, {Param}) ->
+    Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
+    ok = lock(Address),
     true;
-handle_rpc(<<"wallet_is_locked">>, [Address]) ->
-    is_locked(?jsonrpc_b58_to_bin(Address));
+handle_rpc(<<"wallet_is_locked">>, {Param}) ->
+    Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
+    is_locked(Address);
 
 
-handle_rpc(<<"wallet_pay">>, [Address, PayeeStr, Amount]) ->
-    Payer = ?jsonrpc_b58_to_bin(Address),
-    Payee = ?jsonrpc_b58_to_bin(PayeeStr),
+handle_rpc(<<"wallet_pay">>, {Param}) ->
+    Payer = ?jsonrpc_b58_to_bin(<<"address">>, Param),
+    Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Param),
+    Amount = ?jsonrpc_get_param(<<"bones">>, Param),
     {ok, Txn} = mk_payment_txn_v1(Payer, Payee, Amount),
     case sign(Payer, Txn) of
         {ok, SignedTxn} ->
@@ -175,11 +182,18 @@ handle_rpc(<<"wallet_pay">>, [Address, PayeeStr, Amount]) ->
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Wallet is locked"})
     end;
-handle_rpc(<<"wallet_pay">>, [Address, PaymentList]) when is_list(PaymentList) ->
-    Payer = ?jsonrpc_b58_to_bin(Address),
-    Payments = lists:map(fun([Payee, Amount]) ->
-                                 {?jsonrpc_b58_to_bin(Payee), Amount}
-                         end, PaymentList),
+handle_rpc(<<"wallet_pay_multi">>, {Param})  ->
+    Payer = ?jsonrpc_b58_to_bin(<<"address">>, Param),
+    Payments = case ?jsonrpc_get_param(<<"paymennts">>, Param, false) of
+                   L when is_list(L) andalso length(L) > 0 ->
+                       lists:map(fun(Entry) ->
+                                         Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Entry),
+                                         Amount = ?jsonrpc_get_param(<<"bones">>, Entry),
+                                         {Payee, Amount}
+                                 end, L);
+                   _ ->
+                       ?jsonrpc_error({invalid_params, "Missing or empty payment list"})
+               end,
     {ok, Txn} = mk_payment_txn_v2(Payer, Payments),
     case sign(Payer, Txn) of
         {ok, SignedTxn} ->
@@ -189,9 +203,11 @@ handle_rpc(<<"wallet_pay">>, [Address, PaymentList]) when is_list(PaymentList) -
             ?jsonrpc_error({not_found, "Wallet is locked"})
     end;
 
-handle_rpc(<<"wallet_export">>, [Address, Path]) ->
+handle_rpc(<<"wallet_export">>, {Param}) ->
+    Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
+    Path = ?jsonrpc_get_param(<<"path">>, Param),
     {ok, State} = get_state(),
-    case get_wallet(?jsonrpc_b58_to_bin(Address), State) of
+    case get_wallet(Address, State) of
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Wallet not found"});
         {ok, Wallet} ->
@@ -203,11 +219,14 @@ handle_rpc(<<"wallet_export">>, [Address, Path]) ->
             end
     end;
 
-handle_rpc(<<"wallet_backup_list">>, [Path]) ->
+handle_rpc(<<"wallet_backup_list">>, {Param}) ->
+    Path = ?jsonrpc_get_param(<<"path">>, Param),
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
     {ok, Info} = rocksdb:get_backup_info(Engine),
     Info;
-handle_rpc(<<"wallet_backup_create">>, [Path, NumBackupToKeep]) ->
+handle_rpc(<<"wallet_backup_create">>, {Param}) ->
+    Path = ?jsonrpc_get_param(<<"path">>, Param),
+    NumBackupToKeep = ?jsonrpc_get_param(<<"max_backups">>, Param),
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
     {ok, #state{db=DB}} = get_state(),
     ok = rocksdb:create_new_backup(Engine, DB),
@@ -215,7 +234,9 @@ handle_rpc(<<"wallet_backup_create">>, [Path, NumBackupToKeep]) ->
     {ok, Info} = rocksdb:get_backup_info(Engine),
     LastBackup = hd(Info),
     LastBackup;
-handle_rpc(<<"wallet_backup_delete">>, [Path, BackupID]) ->
+handle_rpc(<<"wallet_backup_delete">>, {Param}) ->
+    Path = ?jsonrpc_get_param(<<"path">>, Param),
+    BackupID = ?jsonrpc_get_param(<<"backup_id">>, Param),
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
     case rocksdb:delete_backup(Engine, BackupID) of
         ok ->
@@ -225,7 +246,9 @@ handle_rpc(<<"wallet_backup_delete">>, [Path, BackupID]) ->
         {error, _}=Error ->
             ?jsonrpc_error(Error)
     end;
-handle_rpc(<<"wallet_backup_restore">>, [Path, BackupID]) ->
+handle_rpc(<<"wallet_backup_restore">>, {Param}) ->
+    Path = ?jsonrpc_get_param(<<"path">>, Param),
+    BackupID = ?jsonrpc_get_param(<<"backup_id">>, Param),
     case restore(binary_to_list(Path), BackupID) of
         ok ->
             true;

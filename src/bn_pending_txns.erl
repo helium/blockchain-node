@@ -72,8 +72,8 @@ terminate(_Reason, #state{db=DB}) ->
 %% jsonrpc_handler
 %%
 
-handle_rpc(<<"pending_transaction_status">>, [Param]) ->
-    Hash = ?jsonrpc_b64_to_bin(Param),
+handle_rpc(<<"pending_transaction_status">>, {Param}) ->
+    Hash = ?jsonrpc_b64_to_bin(<<"hash">>, Param),
     {ok, State} = get_state(),
     case get_txn_status(Hash, State) of
         {ok, pending} ->

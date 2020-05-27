@@ -1,10 +1,11 @@
 -module(bn_jsonrpc_handler).
 
--callback handle_rpc(Method::binary(), Params::list()) -> jsone:json().
+-callback handle_rpc(Method::binary(), Params::term()) -> jsone:json().
 
 -export([handle/2, handle_event/3]).
--export([jsonrpc_b58_to_bin/1,
-         jsonrpc_b64_to_bin/1,
+-export([jsonrpc_b58_to_bin/2,
+         jsonrpc_b64_to_bin/2,
+         jsonrpc_get_param/2, jsonrpc_get_param/3,
          jsonrpc_error/1]).
 
 -include("bn_jsonrpc.hrl").
@@ -66,19 +67,32 @@ handle_event(_, _, _) ->
 %%
 %% Param conversion
 %%
-jsonrpc_b58_to_bin(B58) ->
+jsonrpc_get_param(Key, PropList) ->
+    case proplists:get_value(Key, PropList, false) of
+        false -> ?jsonrpc_error(invalid_params);
+        V -> V
+    end.
+
+jsonrpc_get_param(Key, PropList, Default) ->
+    proplists:get_value(Key, PropList, Default).
+
+
+jsonrpc_b58_to_bin(Key, PropList) ->
+    B58 = jsonrpc_get_param(Key, PropList),
     try
         ?B58_TO_BIN(B58)
     catch
         _:_ -> ?jsonrpc_error(invalid_params)
     end.
 
-jsonrpc_b64_to_bin(B64) ->
+jsonrpc_b64_to_bin(Key, PropList) ->
+    B64 = jsonrpc_get_param(Key, PropList),
     try
         ?B64_TO_BIN(B64)
     catch
         _:_ -> ?jsonrpc_error(invalid_params)
     end.
+
 
 %%
 %% Errors

@@ -67,14 +67,14 @@ terminate(_Reason, #state{db=DB}) ->
 %% jsonrpc_handler
 %%
 
-handle_rpc(<<"transaction_get">>, [Param]) ->
-    Hash = ?jsonrpc_b64_to_bin(Param),
+handle_rpc(<<"transaction_get">>, {Param}) ->
+    Hash = ?jsonrpc_b64_to_bin(<<"hash">>, Param),
     {ok, State} = get_state(),
     case get_transaction(Hash, State) of
         {ok, Txn} ->
             blockchain_txn:to_json(Txn, []);
         {error, not_found} ->
-            ?jsonrpc_error({not_found, "No transaction: ~p", [Param]});
+            ?jsonrpc_error({not_found, "No transaction: ~p", [?BIN_TO_B64(Hash)]});
         {error, _}=Error ->
             ?jsonrpc_error(Error)
     end;

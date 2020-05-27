@@ -10,8 +10,8 @@
 %% jsonrpc_handler
 %%
 
-handle_rpc(<<"account_get">>, [Param]) ->
-    Address = ?jsonrpc_b58_to_bin(Param),
+handle_rpc(<<"account_get">>, {Param}) ->
+    Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     Ledger = blockchain:ledger(blockchain_worker:blockchain()),
     GetBalance = fun() ->
                          case blockchain_ledger_v1:find_entry(Address, Ledger) of
@@ -53,7 +53,7 @@ handle_rpc(<<"account_get">>, [Param]) ->
                         maps:merge(Map, Fun())
                 end,
                 #{
-                  address => Param
+                  address => ?BIN_TO_B58(Address)
                  },
                 [GetBalance, GetSecurities, GetDCs]);
 

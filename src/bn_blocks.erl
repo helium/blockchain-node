@@ -8,12 +8,13 @@
 handle_rpc(<<"block_height">>, _Params) ->
     bn_txns:follower_height();
 
-handle_rpc(<<"block_get">>, [Param]) ->
-    HeightOrHash = case Param of
-                       V when is_binary(V) -> ?jsonrpc_b64_to_bin(V);
-                       V when is_integer(V) -> V;
-                       _ -> ?jsonrpc_error({invalid_params, Param})
-                   end,
+handle_rpc(<<"block_get">>, {Param}) ->
+    HeightOrHash =
+        case ?jsonrpc_get_param(<<"height">>, Param, false) of
+            false -> ?jsonrpc_b64_to_bin(<<"hash">>, Param);
+            V when is_integer(V) -> V;
+            _ -> ?jsonrpc_error({invalid_params, Param})
+        end,
     case blockchain:get_block(HeightOrHash, blockchain_worker:blockchain()) of
         {ok, Block} ->
             blockchain_block:to_json(Block, []);
