@@ -83,7 +83,7 @@ handle_rpc(<<"pending_transaction_status">>, {Param}) ->
         {ok, {failed, Reason}} ->
             Reason;
         {error, not_found} ->
-            <<"not_found">>
+            ?jsonrpc_error({not_found, "Pending transaction not found"})
     end;
 
 handle_rpc(_, _) ->

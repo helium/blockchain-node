@@ -40,6 +40,8 @@ doc:
 release:
 	$(REBAR) as $(PROFILE) do release
 
+.PHONY: docs
+
 start:
 	./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node start
 
@@ -48,3 +50,6 @@ stop:
 
 console:
 	./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node remote_console
+
+docs:
+	$(MAKE) -C docs

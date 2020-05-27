@@ -1,0 +1,664 @@
+{
+  "$schema":
+    "https://rawgit.com/helium/blockchain-node/master/docs/blockchain_node.schema.json",
+  "jrgen": "1.1",
+  "jsonrpc": "2.0",
+
+  "info": {
+    "title": "blockchain_node",
+    "description": [
+      "An API to the Helium blockchain-node.",
+      "This api follows the json-rpc 2.0 specification. More information available at http://www.jsonrpc.org/specification."
+    ],
+    "version": "1.0"
+  },
+
+  "definitions": {
+    "height": {
+      "type": "number",
+      "description": "Block height"
+    },
+    "block": {
+      "type": "object",
+      "description": "Block details",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "description": "Hash of block",
+          "example": "vX_PzD2DvIQZPlpM_LiDCCewpWuZkwcdAhjnJXeg5Gk"
+        },
+        "height": {
+          "type": "number",
+          "description": "Height of block",
+          "example": 318492
+        },
+        "prev_hash": {
+          "type": "string",
+          "description": "Hash of previous block",
+          "example": "OLv5ah-94zg3ySJK5x50-W6Kw4gd510ikhpbByq37ZU"
+        },
+        "time": {
+          "type": "number",
+          "description": "Time of block in seconds from epoch",
+          "example": 1588558709
+        },
+        "transactions": {
+          "type": "array",
+          "description": "Block transaction hashes",
+          "items": {
+            "description": "Transaction hash",
+            "type": "string"
+          },
+          "example": [
+            "wexZNzv5nlLI9riuN8WDaBS8yxhGwfFBYK4MVSGDHis",
+            "nBifAlkm6d6b2kPclJbKI8T4rjefgwhsZxKPUHXFJSM",
+            "k_ZS64CexnpvYfwQLjNytKBHrGrZMe8hI_lHpyD6Tx0",
+            "ER_N9N58gsIkPubq0tSlrWZUtdD1ij8TsEqMZDGQuSI",
+            "bsnMBjroAfiuyQe1lI24zGTeqtIKKBDPbqlLokgxQg8",
+            "39Sj-bprwSiI28DMFZid0pXsTqEvS-tTZa6zMyyE_ig",
+            "sqMRtZLeBFgOpvB_tOOa2H1UVXNFJc-9K8qYfdJMRME",
+            "gPbkpNBhuQrZAbLjkkeUlVBjXMHTWk5AJn0GEK8GRgE",
+            "pnDJ1K5ydeABq3Zy1xV_ey0TF3FouDScqKk1lPqnUsU",
+            "Y3sNXBPfmt1SRPhXbG3mK9W2kEAvnFWBLb77ATADmv0",
+            "utKCgooy2wb6EK6n8S-hln16ugZhwnUdfRUWv6MOBGE",
+            "-Zj-qfR1VB0NyIUavkZgr5qzPDxkIxIM1WZdvs1hkRk",
+            "-BpXPSMylHwUbU3FtHzxMD_X5smuHqSi-d3DB0vllmQ",
+            "t6BWSO0nIvIO_wpiJOjCMd7hO3rIWSapF-p6IybQAjg",
+            "yCFtd4m34B8PNHOsFH708bPHKW9JuWe3iFoChkgpLdw",
+            "yrbiQ4uPQQYjBJN5YOc73CkBWx3Y9354sHymKqwWJUA",
+            "TsGVx5z8Ozk0jHGfBS0heK8tBpcHjSgyzvD4rkCbnKk",
+            "NrS5Q4RCIuECKt0cb3mrnPdLQtrS9hSQudiZAl5ZObI",
+            "4lsxf5RUK66CrLcG8CqCUNUq5V5onvz11FZPHR2QLzI",
+            "Mw080p4DaYLW0xhRJh4fvnfDfJ7I1Iz4idqUtTZwdu4"
+          ]
+        }
+      },
+      "required": ["hash", "height", "prev_hash", "time", "transactions"]
+    },
+    "transaction": {
+      "type": "object",
+      "description": "Transaction details. The exact fields returned depend on the transaction type returned in the result.",
+      "properties": {
+        "hash": {
+          "type": "string",
+            "description": "B64 hash of the transaction"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the transaction"
+        }
+      },
+      "required": ["type", "hash"]
+    },
+    "backup_info": {
+      "type": "object",
+      "properties": {
+        "backup_id": {
+          "type": "integer",
+          "description": "ID of the backup",
+          "example": 2
+        },
+        "number_files": {
+          "type": "integer",
+          "description": "Number of files in the backup",
+          "example": 3
+        },
+        "size": {
+          "type": "integer",
+          "description": "Size of backup, in bytes"
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "Timestamp (seconds since epoch) of backup"
+        }
+      },
+      "required": ["backup_id", "number_files", "size", "timestamp"]
+    }
+  },
+
+
+  "methods": {
+    "block_height": {
+      "summary": "Gets the stored height of the blockchain.",
+      "description":
+        "Gets the stored height of the blockchain.",
+
+      "tags": ["blocks"],
+
+      "result": {
+        "type": "number",
+        "description": "Block height",
+        "example": 318492
+      }
+    },
+
+    "block_get": {
+      "summary": "Get a block by height or hash.",
+      "description":
+        "Gets a block with it's transaction hashes given a block height or block hash.",
+
+      "tags": ["blocks"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "height": {
+            "description": "Block height to fetch",
+            "type": "number",
+            "example": 318492
+          },
+          "hash": {
+            "description": "Block hash to fetch",
+            "type": "number"
+          }
+        }
+      },
+
+      "result": {
+        "$ref": "#/definitions/block"
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Block not found"
+        },
+        {
+          "code": -150,
+          "description": "Failed to get block"
+        },
+        {
+          "code": -3602,
+          "description": "Invalid parameter"
+        }
+      ]
+    },
+
+    "acccount_get": {
+      "summary": "Get account details.",
+      "description": "Get account details for a given account address.",
+      "tags": ["accounts"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "B58 address of the account to fetch"
+          }
+        },
+        "required": ["address"]
+      },
+
+      "result": {
+        "type": "object",
+        "description": "Account",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Address of the account",
+            "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+          },
+          "balance": {
+            "type": "number",
+            "description": "HNT balance of the account in bones",
+            "example": 1000
+          },
+          "nonce": {
+            "type": "number",
+            "description": "The current nonce for the account",
+            "example": 3
+          },
+          "dc_balance": {
+            "type": "number",
+            "description": "Data credit balance of the account",
+            "example": 0
+          },
+          "dc_nonce": {
+            "type": "number",
+            "description": "The current data credit nonce for the account",
+            "example": 0
+            },
+          "sec_balance": {
+            "type": "number",
+            "description": "Security token balance of the account",
+            "example": 0
+          },
+          "sec_nonce": {
+            "type": "number",
+            "description": "The current security token nonce for the account",
+            "example": 0
+          }
+        },
+        "required": ["address", "balance", "nonce", "dc_balance", "dc_nonce", "sec_balance", "sec_nonce"]
+      }
+    },
+
+    "transaction_get": {
+      "summary": "Get transaction details.",
+      "description": "Get details for a given transaction hash.",
+      "tags": ["transactions"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "type": "string",
+            "description": "B64 hash of the transaction to fetch"
+          }
+        },
+        "required": ["hash"]
+      },
+
+      "result": {
+        "$ref": "#/definitions/transaction"
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Transaction not found"
+        },
+        {
+          "code": -150,
+          "description": "Failed to get transaction"
+        }
+      ]
+
+    },
+
+    "pending_transaction_status": {
+      "summary": "Get pending transaction status.",
+      "description": "Get the status a previously submitted transaction.",
+      "tags": ["pending transactions"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "type": "string",
+            "description": "B64 hash of the pending transaction to fetch",
+            "example": "xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs"
+          }
+        },
+        "required": ["hash"]
+      },
+
+      "result": {
+        "type": "string",
+        "description": "One of 'pending', 'cleared', 'not_found' or a failure reason",
+        "example": "cleared"
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Pending transaction not found"
+        }
+      ]
+
+    },
+
+    "wallet_create": {
+      "summary": "Create a new wallet.",
+      "description": "Creates a new wallet, encrypted with the given password. The wallet is locked after creation.",
+      "tags": ["wallets"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "Password used to encrypt the wallet",
+            "example": "a password"
+          }
+        },
+        "required": ["password"]
+      },
+
+      "result": {
+        "type": "string",
+        "description": "The B58 encoded public address of the wallet",
+        "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+      }
+
+    },
+
+    "wallet_list": {
+      "summary": "List all wallets.",
+      "description": "Lists the public keys of all wallets.",
+      "tags": ["wallets"],
+
+      "result": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The B58 encoded public address of a wallet"
+        },
+        "example":  [
+          "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+        ]
+      }
+
+    },
+
+    "wallet_unlock": {
+      "summary": "Unlock a wallet for signing.",
+      "description": "Unlock a wallet for signing. The wallet will be unlocked for 60 seonds.",
+      "tags": ["wallets"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "B58 address of the wallet to unlock",
+            "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+          },
+          "password": {
+            "type": "string",
+            "description": "Password used to decrypt the wallet",
+            "example": "a password"
+          }
+        },
+        "required": ["address", "password"]
+      },
+
+      "result": {
+        "type": "boolean",
+        "description": "Returns true if the wallet is unlocked",
+        "example": true
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Wallet not found"
+        }
+      ]
+
+    },
+
+    "wallet_lock": {
+      "summary": "Lock a wallet.",
+      "description": "Locks a previously unlocked wallet.",
+      "tags": ["wallets"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "B58 address of the wallet to lock",
+            "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+          }
+        },
+        "required": ["address"]
+      },
+
+      "result": {
+        "type": "boolean",
+        "description": "Returns true regardless of whether the wallet is found or not",
+        "example": true
+      }
+    },
+
+    "wallet_is_locked": {
+      "summary": "Checks if a wallet is locked.",
+      "description": "Checks if a wallet is unlocked.",
+      "tags": ["wallets"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "B58 address of the wallet to check",
+            "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+          }
+        },
+        "required": ["address"]
+      },
+
+      "result": {
+        "type": "boolean",
+        "description": "Returns true if the wallet is locked or uknown",
+        "example": true
+      }
+    },
+
+    "wallet_pay": {
+      "summary": "Send a payment to another account.",
+      "description": "Sends a single payment in bones to a given account address. Note that 1 HNT it 100_000_000 bones",
+      "tags": ["wallets"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "B58 address of the payer wallet",
+            "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+          },
+          "payee": {
+            "type": "string",
+            "description": "B58 address of the payee account",
+            "example": "13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH"
+          },
+          "bnoes": {
+            "type": "integer",
+            "description": "Amount in bones to send",
+            "example": 1000
+          }
+
+        },
+        "required": ["address", "payee", "bones"]
+      },
+
+      "result": {
+        "$ref": "#/definitions/transaction"
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Wallet not found or locked"
+        }
+      ]
+
+    },
+
+    "wallet_pay_multi": {
+      "summary": "Send multiple paymens in a single transation.",
+      "description": "Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_000_000 bones",
+      "tags": ["wallets"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "B58 address of the payer wallet"
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "payee": {
+                  "type": "string",
+                  "description": "B58 address of the payee account"
+                },
+                "bones": {
+                  "type": "integer",
+                  "description": "Amount in bones to send"
+                }
+              }
+            }
+          }
+
+        },
+        "required": ["address", "payments"]
+      },
+
+      "result": {
+        "$ref": "#/definitions/transaction"
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Wallet not found or locked"
+        }
+      ]
+
+    },
+
+    "wallet_export": {
+      "summary": "Export an encrypted wallet to a given path.",
+      "description": "Exports an encrypted wallet to the given path.",
+      "tags": ["wallets"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "B58 address of the payer wallet"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path to the file to save the wallet to"
+          }
+        },
+        "required": ["address", "path"]
+      },
+
+      "result": {
+        "$ref": "#/definitions/transaction"
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Wallet not found"
+        }
+      ]
+
+    },
+
+    "wallet_backup_list": {
+      "summary": "Lists information on the list of backups in the given path.",
+      "description": "Backup list information includes the backup ID, size, and the time the backup was created.",
+      "tags": ["wallets", "backups"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the backup folder"
+          }
+        },
+        "required": ["path"]
+      },
+
+      "result": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/backup_info"
+        }
+      }
+    },
+
+    "wallet_backup_create": {
+      "summary": "Creates a backup of the wallet database.",
+      "description": "Creates a backup of the backup database in the given path.",
+      "tags": ["wallets", "backups"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the backup folder"
+          }
+        },
+        "required": ["path"]
+      },
+
+      "result": {
+        "$ref": "#/definitions/backup_info"
+      }
+    },
+
+    "wallet_backup_delete": {
+      "summary": "Delete a backup.",
+      "description": "Delete the backup with the given ID from the given backup path.",
+      "tags": ["wallets", "backups"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the backup folder"
+          },
+          "backup_id": {
+            "type": "integer",
+            "description": "Backup ID to delete"
+          }
+        },
+        "required": ["path", "backup_id"]
+      },
+
+      "result": {
+        "type": "boolean",
+        "description": "True if the backup was deleted succesfully"
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Backup not found"
+        }
+      ]
+
+    },
+
+    "wallet_backup_restore": {
+      "summary": "Restore the wallet database.",
+      "description": "Restores the wallet database from the backup ID in the given backup folder.",
+      "tags": ["wallets", "backups"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the backup folder"
+          },
+          "backup_id": {
+            "type": "integer",
+            "description": "Backup ID to restore from"
+          }
+        },
+        "required": ["path", "backup_id"]
+      },
+
+      "result": {
+        "type": "boolean",
+        "description": "True if the backup was restored succesfully"
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Backup not found"
+        }
+      ]
+
+    }
+
+  }
+}
