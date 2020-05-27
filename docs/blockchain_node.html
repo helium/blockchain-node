@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>blockchain_node</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ"
+    crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
+    crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+    crossorigin="anonymous"></script>
+
+  <style>
+    .summary-container {
+      word-wrap: break-word;
+    }
+
+    .description-container {
+      word-wrap: break-word;
+    }
+
+    .container {
+      margin: 25px;
+    }
+
+    .card-header>h3 {
+      display: inline;
+    }
+
+    .card-header[data-toggle] {
+      cursor: pointer;
+    }
+
+    .card-header .badge {
+      margin-top: .35rem;
+    }
+
+    textarea {
+      word-wrap: normal !important;
+      white-space: nowrap;
+      height: 200px;
+    }
+
+    .textarea-success {
+      background-color: #dff0d8 !important;
+      border-color: #d0e9c6 !important;
+      color: #3c763d !important;
+    }
+
+    .textarea-danger {
+      background-color: #f2dede !important;
+      border-color: #ebcccc !important;
+      color: #a94442 !important;
+    }
+
+    #toc {
+      position: sticky;
+      top: 25px;
+      height: calc(100vh - 50px);
+      overflow: auto;
+      font-size: 0.75em;
+    }
+
+    .main-col {
+      border-left: 1px solid rgba(0, 0, 0, .1)
+    }
+
+    .nav-link {
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+    }
+
+    h4 {
+      font-size: 1.25rem;
+    }
+
+    .schema-preview {
+      max-height: 500px;
+      margin-bottom: 0px;
+    }
+
+    @media (max-width: 992px) {
+      #toc {
+        display: none;
+      }
+      .main-col {
+        border-left: none;
+        padding-left: 0;
+        padding-right: 0;
+      }
+    }
+  </style>
+
+  <script>
+    var methodsCollapsed = true;
+    var toggleMethods = function () {
+      methodsCollapsed = !methodsCollapsed;
+      if (methodsCollapsed) {
+        $('.collapse').collapse('hide')
+      } else {
+        $('.collapse').collapse('show')
+      }
+    }
+
+    var showSendRequestModal = function (request) {
+      $('#send-request-request').val(JSON.stringify(JSON.parse(decodeURIComponent(request)), null, 4));
+      $('#send-request-response').val('');
+      $("#send-request-response").removeClass("textarea-danger textarea-success");
+      $('#send-request-modal').modal('show')
+    }
+
+    var showExampleModal = function (request, response) {
+      $('#show-example-request').val(JSON.stringify(JSON.parse(decodeURIComponent(request)), null, 4));
+      $('#show-example-response').val(JSON.stringify(JSON.parse(decodeURIComponent(response)), null, 4));
+      $('#show-example-modal').modal('show')
+    }
+
+    var sendRequest = function () {
+      var url = $('#send-request-url').val();
+      var request = $('#send-request-request').val();
+      fetch(url, {
+        method: 'post',
+        body: request,
+      }).then(function (response) {
+        if (response.ok) {
+          response.json().then((rpcResponse) => {
+            $("#send-request-response").val(JSON.stringify(rpcResponse, null, 4));
+            $("#send-request-response").removeClass("textarea-danger").addClass("textarea-success");
+          });
+        } else {
+          $("#send-request-response").val(response.status + ' - ' + response.statusText);
+          $("#send-request-response").removeClass("textarea-success").addClass("textarea-danger");
+        }
+      }).catch(function (error) {
+        $("#send-request-response").val(error);
+        $("#send-request-response").removeClass("textarea-success").addClass("textarea-danger");
+      });
+    }
+
+    $(function () {
+      $('[data-toggle="popover"]').popover();
+      $('#send-request-url').val('http://127.0.0.1:8080');
+    })
+  </script>
+</head>
+
+<body data-spy="scroll" data-target="#toc">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-3">
+        <nav id="toc" data-spy="affix" class="affix" data-toggle="toc">
+          <ul class="nav nav-pills flex-column">
+  <li class="nav-item">
+  <a class="nav-link" href="#block_height">block_height</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#block_get">block_get</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#acccount_get">acccount_get</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#transaction_get">transaction_get</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#pending_transaction_status">pending_transaction_status</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_create">wallet_create</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_list">wallet_list</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_unlock">wallet_unlock</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_lock">wallet_lock</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_is_locked">wallet_is_locked</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_pay">wallet_pay</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_pay_multi">wallet_pay_multi</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_export">wallet_export</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_backup_list">wallet_backup_list</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_backup_create">wallet_backup_create</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_backup_delete">wallet_backup_delete</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="#wallet_backup_restore">wallet_backup_restore</a>
+</li>
+
+</ul>
+
+        </nav>
+      </div>
+      <div class="col-lg-9 main-col">
+
+        <h1>blockchain_node</h1>
+        <div class="introduction">
+          <p>An API to the Helium blockchain-node.<br>This api follows the json-rpc 2.0 specification. More information available at http://www.jsonrpc.org/specification.</p>
+          <strong>Version: 1.0</strong>
+        </div>
+        <hr>
+        <button type="button" class="btn btn-primary btn-sm" onclick="toggleMethods()">
+          Toggle all
+        </button>
+        <br>
+        <hr> <div class="method" id="block_height">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#block_height-content">
+      <h3>block_height</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">blocks</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="block_height-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22block_height%22%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20318492%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22block_height%22%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Gets the stored height of the blockchain.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Gets the stored height of the blockchain.</p>
+  <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'number',
+    'description': 'Block height',
+    'example': 318492
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>number</td>
+  <td>Block height</td>
+</tr>
+
+  </table>
+</div> 
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="block_get">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#block_get-content">
+      <h3>block_get</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">blocks</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="block_get-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22block_get%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22height%22%3A%20318492%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22hash%22%3A%20%22vX_PzD2DvIQZPlpM_LiDCCewpWuZkwcdAhjnJXeg5Gk%22%2C%0A%20%20%20%20%20%20%20%20%22height%22%3A%20318492%2C%0A%20%20%20%20%20%20%20%20%22prev_hash%22%3A%20%22OLv5ah-94zg3ySJK5x50-W6Kw4gd510ikhpbByq37ZU%22%2C%0A%20%20%20%20%20%20%20%20%22time%22%3A%201588558709%2C%0A%20%20%20%20%20%20%20%20%22transactions%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%22wexZNzv5nlLI9riuN8WDaBS8yxhGwfFBYK4MVSGDHis%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22nBifAlkm6d6b2kPclJbKI8T4rjefgwhsZxKPUHXFJSM%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22k_ZS64CexnpvYfwQLjNytKBHrGrZMe8hI_lHpyD6Tx0%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22ER_N9N58gsIkPubq0tSlrWZUtdD1ij8TsEqMZDGQuSI%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22bsnMBjroAfiuyQe1lI24zGTeqtIKKBDPbqlLokgxQg8%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%2239Sj-bprwSiI28DMFZid0pXsTqEvS-tTZa6zMyyE_ig%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22sqMRtZLeBFgOpvB_tOOa2H1UVXNFJc-9K8qYfdJMRME%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22gPbkpNBhuQrZAbLjkkeUlVBjXMHTWk5AJn0GEK8GRgE%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22pnDJ1K5ydeABq3Zy1xV_ey0TF3FouDScqKk1lPqnUsU%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Y3sNXBPfmt1SRPhXbG3mK9W2kEAvnFWBLb77ATADmv0%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22utKCgooy2wb6EK6n8S-hln16ugZhwnUdfRUWv6MOBGE%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22-Zj-qfR1VB0NyIUavkZgr5qzPDxkIxIM1WZdvs1hkRk%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22-BpXPSMylHwUbU3FtHzxMD_X5smuHqSi-d3DB0vllmQ%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22t6BWSO0nIvIO_wpiJOjCMd7hO3rIWSapF-p6IybQAjg%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22yCFtd4m34B8PNHOsFH708bPHKW9JuWe3iFoChkgpLdw%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22yrbiQ4uPQQYjBJN5YOc73CkBWx3Y9354sHymKqwWJUA%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22TsGVx5z8Ozk0jHGfBS0heK8tBpcHjSgyzvD4rkCbnKk%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22NrS5Q4RCIuECKt0cb3mrnPdLQtrS9hSQudiZAl5ZObI%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%224lsxf5RUK66CrLcG8CqCUNUq5V5onvz11FZPHR2QLzI%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Mw080p4DaYLW0xhRJh4fvnfDfJ7I1Iz4idqUtTZwdu4%22%0A%20%20%20%20%20%20%20%20%5D%0A%20%20%20%20%7D%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22block_get%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22height%22%3A%20318492%0A%20%20%20%20%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Get a block by height or hash.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Gets a block with it's transaction hashes given a block height or block hash.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'height': {
+      'description': 'Block height to fetch',
+      'type': 'number',
+      'example': 318492
+    },
+    'hash': {
+      'description': 'Block hash to fetch',
+      'type': 'number'
+    }
+  }
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'description': 'Block height to fetch',
+  'type': 'number',
+  'example': 318492
+}</pre>" data-html="true">
+  <td>params?.height</td>
+  <td>number</td>
+  <td>Block height to fetch</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'description': 'Block hash to fetch',
+  'type': 'number'
+}</pre>" data-html="true">
+  <td>params?.hash</td>
+  <td>number</td>
+  <td>Block hash to fetch</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'object',
+    'description': 'Block details',
+    'properties': {
+        'hash': {
+            'type': 'string',
+            'description': 'Hash of block',
+            'example': 'vX_PzD2DvIQZPlpM_LiDCCewpWuZkwcdAhjnJXeg5Gk'
+        },
+        'height': {
+            'type': 'number',
+            'description': 'Height of block',
+            'example': 318492
+        },
+        'prev_hash': {
+            'type': 'string',
+            'description': 'Hash of previous block',
+            'example': 'OLv5ah-94zg3ySJK5x50-W6Kw4gd510ikhpbByq37ZU'
+        },
+        'time': {
+            'type': 'number',
+            'description': 'Time of block in seconds from epoch',
+            'example': 1588558709
+        },
+        'transactions': {
+            'type': 'array',
+            'description': 'Block transaction hashes',
+            'items': {
+                'description': 'Transaction hash',
+                'type': 'string'
+            },
+            'example': [
+                'wexZNzv5nlLI9riuN8WDaBS8yxhGwfFBYK4MVSGDHis',
+                'nBifAlkm6d6b2kPclJbKI8T4rjefgwhsZxKPUHXFJSM',
+                'k_ZS64CexnpvYfwQLjNytKBHrGrZMe8hI_lHpyD6Tx0',
+                'ER_N9N58gsIkPubq0tSlrWZUtdD1ij8TsEqMZDGQuSI',
+                'bsnMBjroAfiuyQe1lI24zGTeqtIKKBDPbqlLokgxQg8',
+                '39Sj-bprwSiI28DMFZid0pXsTqEvS-tTZa6zMyyE_ig',
+                'sqMRtZLeBFgOpvB_tOOa2H1UVXNFJc-9K8qYfdJMRME',
+                'gPbkpNBhuQrZAbLjkkeUlVBjXMHTWk5AJn0GEK8GRgE',
+                'pnDJ1K5ydeABq3Zy1xV_ey0TF3FouDScqKk1lPqnUsU',
+                'Y3sNXBPfmt1SRPhXbG3mK9W2kEAvnFWBLb77ATADmv0',
+                'utKCgooy2wb6EK6n8S-hln16ugZhwnUdfRUWv6MOBGE',
+                '-Zj-qfR1VB0NyIUavkZgr5qzPDxkIxIM1WZdvs1hkRk',
+                '-BpXPSMylHwUbU3FtHzxMD_X5smuHqSi-d3DB0vllmQ',
+                't6BWSO0nIvIO_wpiJOjCMd7hO3rIWSapF-p6IybQAjg',
+                'yCFtd4m34B8PNHOsFH708bPHKW9JuWe3iFoChkgpLdw',
+                'yrbiQ4uPQQYjBJN5YOc73CkBWx3Y9354sHymKqwWJUA',
+                'TsGVx5z8Ozk0jHGfBS0heK8tBpcHjSgyzvD4rkCbnKk',
+                'NrS5Q4RCIuECKt0cb3mrnPdLQtrS9hSQudiZAl5ZObI',
+                '4lsxf5RUK66CrLcG8CqCUNUq5V5onvz11FZPHR2QLzI',
+                'Mw080p4DaYLW0xhRJh4fvnfDfJ7I1Iz4idqUtTZwdu4'
+            ]
+        }
+    },
+    'required': [
+        'hash',
+        'height',
+        'prev_hash',
+        'time',
+        'transactions'
+    ]
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>object</td>
+  <td>Block details</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'Hash of block',
+    'example': 'vX_PzD2DvIQZPlpM_LiDCCewpWuZkwcdAhjnJXeg5Gk'
+}</pre>" data-html="true">
+  <td>result.hash</td>
+  <td>string</td>
+  <td>Hash of block</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'number',
+    'description': 'Height of block',
+    'example': 318492
+}</pre>" data-html="true">
+  <td>result.height</td>
+  <td>number</td>
+  <td>Height of block</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'Hash of previous block',
+    'example': 'OLv5ah-94zg3ySJK5x50-W6Kw4gd510ikhpbByq37ZU'
+}</pre>" data-html="true">
+  <td>result.prev_hash</td>
+  <td>string</td>
+  <td>Hash of previous block</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'number',
+    'description': 'Time of block in seconds from epoch',
+    'example': 1588558709
+}</pre>" data-html="true">
+  <td>result.time</td>
+  <td>number</td>
+  <td>Time of block in seconds from epoch</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'array',
+    'description': 'Block transaction hashes',
+    'items': {
+        'description': 'Transaction hash',
+        'type': 'string'
+    },
+    'example': [
+        'wexZNzv5nlLI9riuN8WDaBS8yxhGwfFBYK4MVSGDHis',
+        'nBifAlkm6d6b2kPclJbKI8T4rjefgwhsZxKPUHXFJSM',
+        'k_ZS64CexnpvYfwQLjNytKBHrGrZMe8hI_lHpyD6Tx0',
+        'ER_N9N58gsIkPubq0tSlrWZUtdD1ij8TsEqMZDGQuSI',
+        'bsnMBjroAfiuyQe1lI24zGTeqtIKKBDPbqlLokgxQg8',
+        '39Sj-bprwSiI28DMFZid0pXsTqEvS-tTZa6zMyyE_ig',
+        'sqMRtZLeBFgOpvB_tOOa2H1UVXNFJc-9K8qYfdJMRME',
+        'gPbkpNBhuQrZAbLjkkeUlVBjXMHTWk5AJn0GEK8GRgE',
+        'pnDJ1K5ydeABq3Zy1xV_ey0TF3FouDScqKk1lPqnUsU',
+        'Y3sNXBPfmt1SRPhXbG3mK9W2kEAvnFWBLb77ATADmv0',
+        'utKCgooy2wb6EK6n8S-hln16ugZhwnUdfRUWv6MOBGE',
+        '-Zj-qfR1VB0NyIUavkZgr5qzPDxkIxIM1WZdvs1hkRk',
+        '-BpXPSMylHwUbU3FtHzxMD_X5smuHqSi-d3DB0vllmQ',
+        't6BWSO0nIvIO_wpiJOjCMd7hO3rIWSapF-p6IybQAjg',
+        'yCFtd4m34B8PNHOsFH708bPHKW9JuWe3iFoChkgpLdw',
+        'yrbiQ4uPQQYjBJN5YOc73CkBWx3Y9354sHymKqwWJUA',
+        'TsGVx5z8Ozk0jHGfBS0heK8tBpcHjSgyzvD4rkCbnKk',
+        'NrS5Q4RCIuECKt0cb3mrnPdLQtrS9hSQudiZAl5ZObI',
+        '4lsxf5RUK66CrLcG8CqCUNUq5V5onvz11FZPHR2QLzI',
+        'Mw080p4DaYLW0xhRJh4fvnfDfJ7I1Iz4idqUtTZwdu4'
+    ]
+}</pre>" data-html="true">
+  <td>result.transactions</td>
+  <td>array</td>
+  <td>Block transaction hashes</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'description': 'Transaction hash',
+    'type': 'string'
+}</pre>" data-html="true">
+  <td>result.transactions[#]</td>
+  <td>string</td>
+  <td>Transaction hash</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Errors</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Code</th>
+      <th>Message</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -100,
+    'description': 'Block not found'
+}</pre>" data-html="true">
+  <td>-100</td>
+  <td>undefined</td>
+  <td>Block not found</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -150,
+    'description': 'Failed to get block'
+}</pre>" data-html="true">
+  <td>-150</td>
+  <td>undefined</td>
+  <td>Failed to get block</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -3602,
+    'description': 'Invalid parameter'
+}</pre>" data-html="true">
+  <td>-3602</td>
+  <td>undefined</td>
+  <td>Invalid parameter</td>
+</tr>
+
+  </table>
+</div>
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="acccount_get">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#acccount_get-content">
+      <h3>acccount_get</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">accounts</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="acccount_get-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22acccount_get%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%2C%0A%20%20%20%20%20%20%20%20%22balance%22%3A%201000%2C%0A%20%20%20%20%20%20%20%20%22nonce%22%3A%203%2C%0A%20%20%20%20%20%20%20%20%22dc_balance%22%3A%200%2C%0A%20%20%20%20%20%20%20%20%22dc_nonce%22%3A%200%2C%0A%20%20%20%20%20%20%20%20%22sec_balance%22%3A%200%2C%0A%20%20%20%20%20%20%20%20%22sec_nonce%22%3A%200%0A%20%20%20%20%7D%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22acccount_get%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Get account details.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Get account details for a given account address.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'address': {
+      'type': 'string',
+      'description': 'B58 address of the account to fetch'
+    }
+  },
+  'required': [
+    'address'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B58 address of the account to fetch'
+}</pre>" data-html="true">
+  <td>params.address</td>
+  <td>string</td>
+  <td>B58 address of the account to fetch</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'object',
+    'description': 'Account',
+    'properties': {
+        'address': {
+            'type': 'string',
+            'description': 'Address of the account',
+            'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+        },
+        'balance': {
+            'type': 'number',
+            'description': 'HNT balance of the account in bones',
+            'example': 1000
+        },
+        'nonce': {
+            'type': 'number',
+            'description': 'The current nonce for the account',
+            'example': 3
+        },
+        'dc_balance': {
+            'type': 'number',
+            'description': 'Data credit balance of the account',
+            'example': 0
+        },
+        'dc_nonce': {
+            'type': 'number',
+            'description': 'The current data credit nonce for the account',
+            'example': 0
+        },
+        'sec_balance': {
+            'type': 'number',
+            'description': 'Security token balance of the account',
+            'example': 0
+        },
+        'sec_nonce': {
+            'type': 'number',
+            'description': 'The current security token nonce for the account',
+            'example': 0
+        }
+    },
+    'required': [
+        'address',
+        'balance',
+        'nonce',
+        'dc_balance',
+        'dc_nonce',
+        'sec_balance',
+        'sec_nonce'
+    ]
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>object</td>
+  <td>Account</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'Address of the account',
+    'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+}</pre>" data-html="true">
+  <td>result.address</td>
+  <td>string</td>
+  <td>Address of the account</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'number',
+    'description': 'HNT balance of the account in bones',
+    'example': 1000
+}</pre>" data-html="true">
+  <td>result.balance</td>
+  <td>number</td>
+  <td>HNT balance of the account in bones</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'number',
+    'description': 'The current nonce for the account',
+    'example': 3
+}</pre>" data-html="true">
+  <td>result.nonce</td>
+  <td>number</td>
+  <td>The current nonce for the account</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'number',
+    'description': 'Data credit balance of the account',
+    'example': 0
+}</pre>" data-html="true">
+  <td>result.dc_balance</td>
+  <td>number</td>
+  <td>Data credit balance of the account</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'number',
+    'description': 'The current data credit nonce for the account',
+    'example': 0
+}</pre>" data-html="true">
+  <td>result.dc_nonce</td>
+  <td>number</td>
+  <td>The current data credit nonce for the account</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'number',
+    'description': 'Security token balance of the account',
+    'example': 0
+}</pre>" data-html="true">
+  <td>result.sec_balance</td>
+  <td>number</td>
+  <td>Security token balance of the account</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'number',
+    'description': 'The current security token nonce for the account',
+    'example': 0
+}</pre>" data-html="true">
+  <td>result.sec_nonce</td>
+  <td>number</td>
+  <td>The current security token nonce for the account</td>
+</tr>
+
+  </table>
+</div> 
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="transaction_get">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#transaction_get-content">
+      <h3>transaction_get</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">transactions</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="transaction_get-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22transaction_get%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%7B%7D%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22transaction_get%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Get transaction details.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Get details for a given transaction hash.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'hash': {
+      'type': 'string',
+      'description': 'B64 hash of the transaction to fetch'
+    }
+  },
+  'required': [
+    'hash'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B64 hash of the transaction to fetch'
+}</pre>" data-html="true">
+  <td>params.hash</td>
+  <td>string</td>
+  <td>B64 hash of the transaction to fetch</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'object',
+    'description': 'Transaction details. The exact fields returned depend on the transaction type returned in the result.',
+    'properties': {
+        'hash': {
+            'type': 'string',
+            'description': 'B64 hash of the transaction'
+        },
+        'type': {
+            'type': 'string',
+            'description': 'The type of the transaction'
+        }
+    },
+    'required': [
+        'type',
+        'hash'
+    ]
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>object</td>
+  <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'B64 hash of the transaction'
+}</pre>" data-html="true">
+  <td>result.hash</td>
+  <td>string</td>
+  <td>B64 hash of the transaction</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'The type of the transaction'
+}</pre>" data-html="true">
+  <td>result.type</td>
+  <td>string</td>
+  <td>The type of the transaction</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Errors</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Code</th>
+      <th>Message</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -100,
+    'description': 'Transaction not found'
+}</pre>" data-html="true">
+  <td>-100</td>
+  <td>undefined</td>
+  <td>Transaction not found</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -150,
+    'description': 'Failed to get transaction'
+}</pre>" data-html="true">
+  <td>-150</td>
+  <td>undefined</td>
+  <td>Failed to get transaction</td>
+</tr>
+
+  </table>
+</div>
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="pending_transaction_status">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#pending_transaction_status-content">
+      <h3>pending_transaction_status</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">pending transactions</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="pending_transaction_status-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22pending_transaction_status%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22hash%22%3A%20%22xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs%22%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%22cleared%22%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22pending_transaction_status%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22hash%22%3A%20%22xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs%22%0A%20%20%20%20%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Get pending transaction status.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Get the status a previously submitted transaction.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'hash': {
+      'type': 'string',
+      'description': 'B64 hash of the pending transaction to fetch',
+      'example': 'xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs'
+    }
+  },
+  'required': [
+    'hash'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B64 hash of the pending transaction to fetch',
+  'example': 'xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs'
+}</pre>" data-html="true">
+  <td>params.hash</td>
+  <td>string</td>
+  <td>B64 hash of the pending transaction to fetch</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'One of 'pending', 'cleared', 'not_found' or a failure reason',
+    'example': 'cleared'
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>string</td>
+  <td>One of 'pending', 'cleared', 'not_found' or a failure reason</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Errors</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Code</th>
+      <th>Message</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -100,
+    'description': 'Pending transaction not found'
+}</pre>" data-html="true">
+  <td>-100</td>
+  <td>undefined</td>
+  <td>Pending transaction not found</td>
+</tr>
+
+  </table>
+</div>
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_create">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_create-content">
+      <h3>wallet_create</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_create-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_create%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22password%22%3A%20%22a%20password%22%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_create%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22password%22%3A%20%22a%20password%22%0A%20%20%20%20%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Create a new wallet.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Creates a new wallet, encrypted with the given password. The wallet is locked after creation.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'password': {
+      'type': 'string',
+      'description': 'Password used to encrypt the wallet',
+      'example': 'a password'
+    }
+  },
+  'required': [
+    'password'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'Password used to encrypt the wallet',
+  'example': 'a password'
+}</pre>" data-html="true">
+  <td>params.password</td>
+  <td>string</td>
+  <td>Password used to encrypt the wallet</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'The B58 encoded public address of the wallet',
+    'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>string</td>
+  <td>The B58 encoded public address of the wallet</td>
+</tr>
+
+  </table>
+</div> 
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_list">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_list-content">
+      <h3>wallet_list</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_list-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_list%22%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%0A%20%20%20%20%5D%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_list%22%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>List all wallets.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Lists the public keys of all wallets.</p>
+  <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'array',
+    'items': {
+        'type': 'string',
+        'description': 'The B58 encoded public address of a wallet'
+    },
+    'example': [
+        '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+    ]
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>array</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'The B58 encoded public address of a wallet'
+}</pre>" data-html="true">
+  <td>result[#]</td>
+  <td>string</td>
+  <td>The B58 encoded public address of a wallet</td>
+</tr>
+
+  </table>
+</div> 
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_unlock">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_unlock-content">
+      <h3>wallet_unlock</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_unlock-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_unlock%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%2C%0A%20%20%20%20%20%20%20%20%22password%22%3A%20%22a%20password%22%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20true%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_unlock%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%2C%0A%20%20%20%20%20%20%20%20%22password%22%3A%20%22a%20password%22%0A%20%20%20%20%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Unlock a wallet for signing.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Unlock a wallet for signing. The wallet will be unlocked for 60 seonds.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'address': {
+      'type': 'string',
+      'description': 'B58 address of the wallet to unlock',
+      'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+    },
+    'password': {
+      'type': 'string',
+      'description': 'Password used to decrypt the wallet',
+      'example': 'a password'
+    }
+  },
+  'required': [
+    'address',
+    'password'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B58 address of the wallet to unlock',
+  'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+}</pre>" data-html="true">
+  <td>params.address</td>
+  <td>string</td>
+  <td>B58 address of the wallet to unlock</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'Password used to decrypt the wallet',
+  'example': 'a password'
+}</pre>" data-html="true">
+  <td>params.password</td>
+  <td>string</td>
+  <td>Password used to decrypt the wallet</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'boolean',
+    'description': 'Returns true if the wallet is unlocked',
+    'example': true
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>boolean</td>
+  <td>Returns true if the wallet is unlocked</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Errors</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Code</th>
+      <th>Message</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -100,
+    'description': 'Wallet not found'
+}</pre>" data-html="true">
+  <td>-100</td>
+  <td>undefined</td>
+  <td>Wallet not found</td>
+</tr>
+
+  </table>
+</div>
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_lock">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_lock-content">
+      <h3>wallet_lock</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_lock-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_lock%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20true%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_lock%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%0A%20%20%20%20%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Lock a wallet.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Locks a previously unlocked wallet.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'address': {
+      'type': 'string',
+      'description': 'B58 address of the wallet to lock',
+      'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+    }
+  },
+  'required': [
+    'address'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B58 address of the wallet to lock',
+  'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+}</pre>" data-html="true">
+  <td>params.address</td>
+  <td>string</td>
+  <td>B58 address of the wallet to lock</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'boolean',
+    'description': 'Returns true regardless of whether the wallet is found or not',
+    'example': true
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>boolean</td>
+  <td>Returns true regardless of whether the wallet is found or not</td>
+</tr>
+
+  </table>
+</div> 
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_is_locked">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_is_locked-content">
+      <h3>wallet_is_locked</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_is_locked-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_is_locked%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20true%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_is_locked%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%0A%20%20%20%20%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Checks if a wallet is locked.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Checks if a wallet is unlocked.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'address': {
+      'type': 'string',
+      'description': 'B58 address of the wallet to check',
+      'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+    }
+  },
+  'required': [
+    'address'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B58 address of the wallet to check',
+  'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+}</pre>" data-html="true">
+  <td>params.address</td>
+  <td>string</td>
+  <td>B58 address of the wallet to check</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'boolean',
+    'description': 'Returns true if the wallet is locked or uknown',
+    'example': true
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>boolean</td>
+  <td>Returns true if the wallet is locked or uknown</td>
+</tr>
+
+  </table>
+</div> 
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_pay">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_pay-content">
+      <h3>wallet_pay</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_pay-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_pay%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%2C%0A%20%20%20%20%20%20%20%20%22payee%22%3A%20%2213buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH%22%2C%0A%20%20%20%20%20%20%20%20%22bnoes%22%3A%201000%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%7B%7D%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_pay%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%2C%0A%20%20%20%20%20%20%20%20%22payee%22%3A%20%2213buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH%22%2C%0A%20%20%20%20%20%20%20%20%22bnoes%22%3A%201000%0A%20%20%20%20%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Send a payment to another account.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Sends a single payment in bones to a given account address. Note that 1 HNT it 100_000_000 bones</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'address': {
+      'type': 'string',
+      'description': 'B58 address of the payer wallet',
+      'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+    },
+    'payee': {
+      'type': 'string',
+      'description': 'B58 address of the payee account',
+      'example': '13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH'
+    },
+    'bnoes': {
+      'type': 'integer',
+      'description': 'Amount in bones to send',
+      'example': 1000
+    }
+  },
+  'required': [
+    'address',
+    'payee',
+    'bones'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B58 address of the payer wallet',
+  'example': '13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5'
+}</pre>" data-html="true">
+  <td>params.address</td>
+  <td>string</td>
+  <td>B58 address of the payer wallet</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B58 address of the payee account',
+  'example': '13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH'
+}</pre>" data-html="true">
+  <td>params.payee</td>
+  <td>string</td>
+  <td>B58 address of the payee account</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'integer',
+  'description': 'Amount in bones to send',
+  'example': 1000
+}</pre>" data-html="true">
+  <td>params?.bnoes</td>
+  <td>integer</td>
+  <td>Amount in bones to send</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'object',
+    'description': 'Transaction details. The exact fields returned depend on the transaction type returned in the result.',
+    'properties': {
+        'hash': {
+            'type': 'string',
+            'description': 'B64 hash of the transaction'
+        },
+        'type': {
+            'type': 'string',
+            'description': 'The type of the transaction'
+        }
+    },
+    'required': [
+        'type',
+        'hash'
+    ]
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>object</td>
+  <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'B64 hash of the transaction'
+}</pre>" data-html="true">
+  <td>result.hash</td>
+  <td>string</td>
+  <td>B64 hash of the transaction</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'The type of the transaction'
+}</pre>" data-html="true">
+  <td>result.type</td>
+  <td>string</td>
+  <td>The type of the transaction</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Errors</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Code</th>
+      <th>Message</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -100,
+    'description': 'Wallet not found or locked'
+}</pre>" data-html="true">
+  <td>-100</td>
+  <td>undefined</td>
+  <td>Wallet not found or locked</td>
+</tr>
+
+  </table>
+</div>
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_pay_multi">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_pay_multi-content">
+      <h3>wallet_pay_multi</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_pay_multi-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_pay_multi%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22payments%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%7D%0A%20%20%20%20%20%20%20%20%5D%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%7B%7D%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_pay_multi%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22payments%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%7D%0A%20%20%20%20%20%20%20%20%5D%0A%20%20%20%20%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Send multiple paymens in a single transation.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_000_000 bones</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'address': {
+      'type': 'string',
+      'description': 'B58 address of the payer wallet'
+    },
+    'payments': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'payee': {
+            'type': 'string',
+            'description': 'B58 address of the payee account'
+          },
+          'bones': {
+            'type': 'integer',
+            'description': 'Amount in bones to send'
+          }
+        }
+      }
+    }
+  },
+  'required': [
+    'address',
+    'payments'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B58 address of the payer wallet'
+}</pre>" data-html="true">
+  <td>params.address</td>
+  <td>string</td>
+  <td>B58 address of the payer wallet</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'array',
+  'items': {
+    'type': 'object',
+    'properties': {
+      'payee': {
+        'type': 'string',
+        'description': 'B58 address of the payee account'
+      },
+      'bones': {
+        'type': 'integer',
+        'description': 'Amount in bones to send'
+      }
+    }
+  }
+}</pre>" data-html="true">
+  <td>params.payments</td>
+  <td>array</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'payee': {
+      'type': 'string',
+      'description': 'B58 address of the payee account'
+    },
+    'bones': {
+      'type': 'integer',
+      'description': 'Amount in bones to send'
+    }
+  }
+}</pre>" data-html="true">
+  <td>params.payments[#]</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B58 address of the payee account'
+}</pre>" data-html="true">
+  <td>params.payments[#]?.payee</td>
+  <td>string</td>
+  <td>B58 address of the payee account</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'integer',
+  'description': 'Amount in bones to send'
+}</pre>" data-html="true">
+  <td>params.payments[#]?.bones</td>
+  <td>integer</td>
+  <td>Amount in bones to send</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'object',
+    'description': 'Transaction details. The exact fields returned depend on the transaction type returned in the result.',
+    'properties': {
+        'hash': {
+            'type': 'string',
+            'description': 'B64 hash of the transaction'
+        },
+        'type': {
+            'type': 'string',
+            'description': 'The type of the transaction'
+        }
+    },
+    'required': [
+        'type',
+        'hash'
+    ]
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>object</td>
+  <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'B64 hash of the transaction'
+}</pre>" data-html="true">
+  <td>result.hash</td>
+  <td>string</td>
+  <td>B64 hash of the transaction</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'The type of the transaction'
+}</pre>" data-html="true">
+  <td>result.type</td>
+  <td>string</td>
+  <td>The type of the transaction</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Errors</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Code</th>
+      <th>Message</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -100,
+    'description': 'Wallet not found or locked'
+}</pre>" data-html="true">
+  <td>-100</td>
+  <td>undefined</td>
+  <td>Wallet not found or locked</td>
+</tr>
+
+  </table>
+</div>
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_export">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_export-content">
+      <h3>wallet_export</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_export-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_export%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%7B%7D%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_export%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Export an encrypted wallet to a given path.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Exports an encrypted wallet to the given path.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'address': {
+      'type': 'string',
+      'description': 'B58 address of the payer wallet'
+    },
+    'path': {
+      'type': 'string',
+      'description': 'Path to the file to save the wallet to'
+    }
+  },
+  'required': [
+    'address',
+    'path'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'B58 address of the payer wallet'
+}</pre>" data-html="true">
+  <td>params.address</td>
+  <td>string</td>
+  <td>B58 address of the payer wallet</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'Path to the file to save the wallet to'
+}</pre>" data-html="true">
+  <td>params.path</td>
+  <td>string</td>
+  <td>Path to the file to save the wallet to</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'object',
+    'description': 'Transaction details. The exact fields returned depend on the transaction type returned in the result.',
+    'properties': {
+        'hash': {
+            'type': 'string',
+            'description': 'B64 hash of the transaction'
+        },
+        'type': {
+            'type': 'string',
+            'description': 'The type of the transaction'
+        }
+    },
+    'required': [
+        'type',
+        'hash'
+    ]
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>object</td>
+  <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'B64 hash of the transaction'
+}</pre>" data-html="true">
+  <td>result.hash</td>
+  <td>string</td>
+  <td>B64 hash of the transaction</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'string',
+    'description': 'The type of the transaction'
+}</pre>" data-html="true">
+  <td>result.type</td>
+  <td>string</td>
+  <td>The type of the transaction</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Errors</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Code</th>
+      <th>Message</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -100,
+    'description': 'Wallet not found'
+}</pre>" data-html="true">
+  <td>-100</td>
+  <td>undefined</td>
+  <td>Wallet not found</td>
+</tr>
+
+  </table>
+</div>
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_backup_list">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_backup_list-content">
+      <h3>wallet_backup_list</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+<span class="badge badge-primary">backups</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_backup_list-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_backup_list%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%22backup_id%22%3A%202%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22number_files%22%3A%203%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%5D%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_backup_list%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Lists information on the list of backups in the given path.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Backup list information includes the backup ID, size, and the time the backup was created.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'path': {
+      'type': 'string',
+      'description': 'Path to the backup folder'
+    }
+  },
+  'required': [
+    'path'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'Path to the backup folder'
+}</pre>" data-html="true">
+  <td>params.path</td>
+  <td>string</td>
+  <td>Path to the backup folder</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'properties': {
+            'backup_id': {
+                'type': 'integer',
+                'description': 'ID of the backup',
+                'example': 2
+            },
+            'number_files': {
+                'type': 'integer',
+                'description': 'Number of files in the backup',
+                'example': 3
+            },
+            'size': {
+                'type': 'integer',
+                'description': 'Size of backup, in bytes'
+            },
+            'timestamp': {
+                'type': 'integer',
+                'description': 'Timestamp (seconds since epoch) of backup'
+            }
+        },
+        'required': [
+            'backup_id',
+            'number_files',
+            'size',
+            'timestamp'
+        ]
+    }
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>array</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'object',
+    'properties': {
+        'backup_id': {
+            'type': 'integer',
+            'description': 'ID of the backup',
+            'example': 2
+        },
+        'number_files': {
+            'type': 'integer',
+            'description': 'Number of files in the backup',
+            'example': 3
+        },
+        'size': {
+            'type': 'integer',
+            'description': 'Size of backup, in bytes'
+        },
+        'timestamp': {
+            'type': 'integer',
+            'description': 'Timestamp (seconds since epoch) of backup'
+        }
+    },
+    'required': [
+        'backup_id',
+        'number_files',
+        'size',
+        'timestamp'
+    ]
+}</pre>" data-html="true">
+  <td>result[#]</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'integer',
+    'description': 'ID of the backup',
+    'example': 2
+}</pre>" data-html="true">
+  <td>result[#].backup_id</td>
+  <td>integer</td>
+  <td>ID of the backup</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'integer',
+    'description': 'Number of files in the backup',
+    'example': 3
+}</pre>" data-html="true">
+  <td>result[#].number_files</td>
+  <td>integer</td>
+  <td>Number of files in the backup</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'integer',
+    'description': 'Size of backup, in bytes'
+}</pre>" data-html="true">
+  <td>result[#].size</td>
+  <td>integer</td>
+  <td>Size of backup, in bytes</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'integer',
+    'description': 'Timestamp (seconds since epoch) of backup'
+}</pre>" data-html="true">
+  <td>result[#].timestamp</td>
+  <td>integer</td>
+  <td>Timestamp (seconds since epoch) of backup</td>
+</tr>
+
+  </table>
+</div> 
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_backup_create">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_backup_create-content">
+      <h3>wallet_backup_create</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+<span class="badge badge-primary">backups</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_backup_create-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_backup_create%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22backup_id%22%3A%202%2C%0A%20%20%20%20%20%20%20%20%22number_files%22%3A%203%0A%20%20%20%20%7D%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_backup_create%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Creates a backup of the wallet database.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Creates a backup of the backup database in the given path.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'path': {
+      'type': 'string',
+      'description': 'Path to the backup folder'
+    }
+  },
+  'required': [
+    'path'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'Path to the backup folder'
+}</pre>" data-html="true">
+  <td>params.path</td>
+  <td>string</td>
+  <td>Path to the backup folder</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'object',
+    'properties': {
+        'backup_id': {
+            'type': 'integer',
+            'description': 'ID of the backup',
+            'example': 2
+        },
+        'number_files': {
+            'type': 'integer',
+            'description': 'Number of files in the backup',
+            'example': 3
+        },
+        'size': {
+            'type': 'integer',
+            'description': 'Size of backup, in bytes'
+        },
+        'timestamp': {
+            'type': 'integer',
+            'description': 'Timestamp (seconds since epoch) of backup'
+        }
+    },
+    'required': [
+        'backup_id',
+        'number_files',
+        'size',
+        'timestamp'
+    ]
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'integer',
+    'description': 'ID of the backup',
+    'example': 2
+}</pre>" data-html="true">
+  <td>result.backup_id</td>
+  <td>integer</td>
+  <td>ID of the backup</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'integer',
+    'description': 'Number of files in the backup',
+    'example': 3
+}</pre>" data-html="true">
+  <td>result.number_files</td>
+  <td>integer</td>
+  <td>Number of files in the backup</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'integer',
+    'description': 'Size of backup, in bytes'
+}</pre>" data-html="true">
+  <td>result.size</td>
+  <td>integer</td>
+  <td>Size of backup, in bytes</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'integer',
+    'description': 'Timestamp (seconds since epoch) of backup'
+}</pre>" data-html="true">
+  <td>result.timestamp</td>
+  <td>integer</td>
+  <td>Timestamp (seconds since epoch) of backup</td>
+</tr>
+
+  </table>
+</div> 
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_backup_delete">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_backup_delete-content">
+      <h3>wallet_backup_delete</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+<span class="badge badge-primary">backups</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_backup_delete-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_backup_delete%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_backup_delete%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Delete a backup.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Delete the backup with the given ID from the given backup path.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'path': {
+      'type': 'string',
+      'description': 'Path to the backup folder'
+    },
+    'backup_id': {
+      'type': 'integer',
+      'description': 'Backup ID to delete'
+    }
+  },
+  'required': [
+    'path',
+    'backup_id'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'Path to the backup folder'
+}</pre>" data-html="true">
+  <td>params.path</td>
+  <td>string</td>
+  <td>Path to the backup folder</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'integer',
+  'description': 'Backup ID to delete'
+}</pre>" data-html="true">
+  <td>params.backup_id</td>
+  <td>integer</td>
+  <td>Backup ID to delete</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'boolean',
+    'description': 'True if the backup was deleted succesfully'
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>boolean</td>
+  <td>True if the backup was deleted succesfully</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Errors</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Code</th>
+      <th>Message</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -100,
+    'description': 'Backup not found'
+}</pre>" data-html="true">
+  <td>-100</td>
+  <td>undefined</td>
+  <td>Backup not found</td>
+</tr>
+
+  </table>
+</div>
+    </div>
+  </div>
+</div>
+<br>
+<div class="method" id="wallet_backup_restore">
+  <div class="card">
+    <div class="card-header" data-toggle="collapse" href="#wallet_backup_restore-content">
+      <h3>wallet_backup_restore</h3>
+      <div class="float-right">
+        <span class="badge badge-primary">wallets</span>
+<span class="badge badge-primary">backups</span>
+
+      </div>
+    </div>
+    <div class="card-block collapse" id="wallet_backup_restore-content">
+
+      <div class="summary-container">
+        <div class="float-right">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_backup_restore%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%0A%7D")'>
+            Show Example
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_backup_restore%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%7D%0A%7D")'>
+            Send Request
+          </button>
+        </div>
+        <p>Restore the wallet database.</p>
+      </div>
+
+      <br>
+
+      <h4>Description</h4>
+<p class="description-container">Restores the wallet database from the backup ID in the given backup folder.</p>
+ <br>
+<h4>Parameters</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'object',
+  'properties': {
+    'path': {
+      'type': 'string',
+      'description': 'Path to the backup folder'
+    },
+    'backup_id': {
+      'type': 'integer',
+      'description': 'Backup ID to restore from'
+    }
+  },
+  'required': [
+    'path',
+    'backup_id'
+  ]
+}</pre>" data-html="true">
+  <td>params</td>
+  <td>object</td>
+  <td></td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'string',
+  'description': 'Path to the backup folder'
+}</pre>" data-html="true">
+  <td>params.path</td>
+  <td>string</td>
+  <td>Path to the backup folder</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'integer',
+  'description': 'Backup ID to restore from'
+}</pre>" data-html="true">
+  <td>params.backup_id</td>
+  <td>integer</td>
+  <td>Backup ID to restore from</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Result</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+    'type': 'boolean',
+    'description': 'True if the backup was restored succesfully'
+}</pre>" data-html="true">
+  <td>result</td>
+  <td>boolean</td>
+  <td>True if the backup was restored succesfully</td>
+</tr>
+
+  </table>
+</div> <br>
+<h4>Errors</h4>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <tr>
+      <th>Code</th>
+      <th>Message</th>
+      <th>Description</th>
+    </tr>
+    <tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre>{
+    'code': -100,
+    'description': 'Backup not found'
+}</pre>" data-html="true">
+  <td>-100</td>
+  <td>undefined</td>
+  <td>Backup not found</td>
+</tr>
+
+  </table>
+</div>
+    </div>
+  </div>
+</div>
+<br>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="send-request-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Send request</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            <div class="form-group row">
+              <label for="send-request-url" class="col-md-2 col-sm-12 col-form-label">URL</label>
+              <div class="col-md-10 col-sm-12">
+                <input type="text" class="form-control" id="send-request-url">
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="send-request-request" class="col-md-2 col-sm-12 col-form-label">Request</label>
+              <div class="col-md-10 col-sm-12">
+                <textarea class="form-control" id="send-request-request" wrap="soft"></textarea>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="url" class="col-md-2 col-sm-12 col-form-label"></label>
+              <div class="col-md-10 col-sm-12">
+                <button type="button" class="btn btn-primary btn-block" onclick="sendRequest()">Send</button>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="send-request-response" class="col-md-2 col-sm-12 col-form-label">Response</label>
+              <div class="col-md-10 col-sm-12">
+                <textarea class="form-control" id="send-request-response"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="show-example-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Show example</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            <div class="form-group row">
+              <label for="show-example-request" class="col-md-2 col-sm-12 col-form-label">Request</label>
+              <div class="col-md-10 col-sm-12">
+                <textarea class="form-control" id="show-example-request"></textarea>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="show-example-response" class="col-md-2 col-sm-12 col-form-label">Response</label>
+              <div class="col-md-10 col-sm-12">
+                <textarea class="form-control" id="show-example-response"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
