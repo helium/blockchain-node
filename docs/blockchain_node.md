@@ -631,7 +631,7 @@ Sends a single payment in bones to a given account address. Note that 1 HNT it 1
 | params         | object  |                                  |
 | params.address | string  | B58 address of the payer wallet  |
 | params.payee   | string  | B58 address of the payee account |
-| params?.bnoes  | integer | Amount in bones to send          |
+| params.bones   | integer | Amount in bones to send          |
 
 ### Result
 
@@ -659,7 +659,7 @@ Sends a single payment in bones to a given account address. Note that 1 HNT it 1
   "params": {
     "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
     "payee": "13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH",
-    "bnoes": 1000
+    "bones": 1000
   }
 }
 ```

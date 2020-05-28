@@ -1558,10 +1558,10 @@
 
       <div class="summary-container">
         <div class="float-right">
-          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_pay%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%2C%0A%20%20%20%20%20%20%20%20%22payee%22%3A%20%2213buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH%22%2C%0A%20%20%20%20%20%20%20%20%22bnoes%22%3A%201000%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%7B%7D%0A%7D")'>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showExampleModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_pay%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%2C%0A%20%20%20%20%20%20%20%20%22payee%22%3A%20%2213buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH%22%2C%0A%20%20%20%20%20%20%20%20%22bones%22%3A%201000%0A%20%20%20%20%7D%0A%7D", "%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22result%22%3A%20%7B%7D%0A%7D")'>
             Show Example
           </button>
-          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_pay%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%2C%0A%20%20%20%20%20%20%20%20%22payee%22%3A%20%2213buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH%22%2C%0A%20%20%20%20%20%20%20%20%22bnoes%22%3A%201000%0A%20%20%20%20%7D%0A%7D")'>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick='showSendRequestModal("%7B%0A%20%20%20%20%22jsonrpc%22%3A%20%222.0%22%2C%0A%20%20%20%20%22id%22%3A%20%221234567890%22%2C%0A%20%20%20%20%22method%22%3A%20%22wallet_pay%22%2C%0A%20%20%20%20%22params%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22address%22%3A%20%2213Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5%22%2C%0A%20%20%20%20%20%20%20%20%22payee%22%3A%20%2213buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH%22%2C%0A%20%20%20%20%20%20%20%20%22bones%22%3A%201000%0A%20%20%20%20%7D%0A%7D")'>
             Send Request
           </button>
         </div>
@@ -1594,7 +1594,7 @@
       'description': 'B58 address of the payee account',
       'example': '13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH'
     },
-    'bnoes': {
+    'bones': {
       'type': 'integer',
       'description': 'Amount in bones to send',
       'example': 1000
@@ -1633,7 +1633,7 @@
   'description': 'Amount in bones to send',
   'example': 1000
 }</pre>" data-html="true">
-  <td>params?.bnoes</td>
+  <td>params.bones</td>
   <td>integer</td>
   <td>Amount in bones to send</td>
 </tr>
