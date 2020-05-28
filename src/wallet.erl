@@ -63,20 +63,26 @@ decrypt(Password, #wallet{
 -spec from_binary(binary()) -> {ok, wallet()} | {error, term()}.
 from_binary(<<Version:16/integer-unsigned-little, Payload/binary>>)
   when Version == ?BASIC_KEY_V2 ->
+    case Payload of
     <<PubKeyBin:33/binary,
       IV:(?IV_LENGTH)/binary,
       Salt:8/binary,
       Iterations:32/integer-unsigned-little,
       Tag:(?TAG_LENGTH)/binary,
-      Encrypted/binary>> = Payload,
-    {ok, #wallet{
-            pubkey_bin=PubKeyBin,
-            iv = IV,
-            salt = Salt,
-            iterations = Iterations,
-            tag = Tag,
-            encrypted = Encrypted
-           }}.
+      Encrypted/binary>> ->
+            {ok, #wallet{
+                    pubkey_bin=PubKeyBin,
+                    iv = IV,
+                    salt = Salt,
+                    iterations = Iterations,
+                    tag = Tag,
+                    encrypted = Encrypted
+                   }};
+        _ -> {error, invalid_wallet}
+    end;
+from_binary(_) ->
+    {error, invalid_wallet}.
+
 
 -spec to_binary(wallet()) -> {ok, binary()} | {error, term()}.
 to_binary(#wallet{ pubkey_bin=PubKeyBin,

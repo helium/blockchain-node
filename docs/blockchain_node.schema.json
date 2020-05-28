@@ -324,6 +324,31 @@
 
     },
 
+    "wallet_delete": {
+      "summary": "Delets a wallet.",
+      "description": "Permanently removes the wallet from the database.",
+      "tags": ["wallets"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "B58 address of the wallet to delete",
+            "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+          }
+        },
+        "required": ["address"]
+      },
+
+      "result": {
+        "type": "boolean",
+        "description": "Returns true if the wallet was deleted",
+        "example": true
+      }
+
+    },
+
     "wallet_list": {
       "summary": "List all wallets.",
       "description": "Lists the public keys of all wallets.",
@@ -513,6 +538,47 @@
       ]
 
     },
+
+    "wallet_import": {
+      "summary": "Import an encrypted wallet.",
+      "description": "Import an encrypted wallet into the wallet database. The password is only used to verify that the wallet can be unlocked and is not stored.",
+      "tags": ["wallets"],
+
+      "params": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "Password used to decrypt the wallet",
+            "example": "a password"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path to the file to import the wallet from"
+          }
+        },
+        "required": ["password", "path"]
+      },
+
+      "result": {
+        "type": "boolean",
+        "description": "Returns true if the wallet was imported",
+        "example": true
+      },
+
+      "errors": [
+        {
+          "code": -100,
+          "description": "Wallet file not found"
+        },
+        {
+          "code": -110,
+          "description": "Invalid password for wallet"
+        }
+      ]
+
+    },
+
 
     "wallet_export": {
       "summary": "Export an encrypted wallet to a given path.",

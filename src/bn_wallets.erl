@@ -146,6 +146,16 @@ handle_rpc(<<"wallet_create">>, {Param}) ->
     ok = save_wallet(Wallet, State),
     ?BIN_TO_B58(wallet:pubkey_bin(Wallet));
 
+handle_rpc(<<"wallet_delete">>, {Param}) ->
+    Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
+    {ok, State} = get_state(),
+    case delete_wallet(Address, State) of
+        {error, _}=Error ->
+            ?jsonrpc_error(Error);
+        ok ->
+            true
+    end;
+
 handle_rpc(<<"wallet_list">>, _Params) ->
     {ok, State} = get_state(),
     [?BIN_TO_B58(Addr) || Addr <- get_wallet_list(State)];
@@ -201,6 +211,30 @@ handle_rpc(<<"wallet_pay_multi">>, {Param})  ->
             blockchain_txn:to_json(SignedTxn, []);
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Wallet is locked"})
+    end;
+
+handle_rpc(<<"wallet_import">>, {Param}) ->
+    Password = ?jsonrpc_get_param(<<"password">>, Param),
+    Path = ?jsonrpc_get_param(<<"path">>, Param),
+    {ok, State} = get_state(),
+    case file:read_file(Path) of
+        {error, enoent} ->
+            ?jsonrpc_error({not_found, "Path not found"});
+        {error, _}=Error ->
+            ?jsonrpc_error(Error);
+        {ok, FileBin} ->
+            case wallet:from_binary(FileBin) of
+                {error, _}=Error ->
+                    ?jsonrpc_error(Error);
+                {ok, Wallet} ->
+                    case wallet:decrypt(Password, Wallet) of
+                        {error, decrypt} ->
+                            ?jsonrpc_error(invalid_password);
+                        {ok, _} ->
+                            ok = save_wallet(Wallet, State),
+                            ?BIN_TO_B58(wallet:pubkey_bin(Wallet))
+                    end
+            end
     end;
 
 handle_rpc(<<"wallet_export">>, {Param}) ->
@@ -320,11 +354,15 @@ get_wallet_list(_Itr, {error, _Error}, Acc) ->
 get_wallet_list(Itr, {ok, Addr, _}, Acc) ->
     get_wallet_list(Itr, rocksdb:iterator_move(Itr, next), [Addr | Acc]).
 
--spec save_wallet(wallet:accont(), #state{}) -> ok | {error, term()}.
+-spec save_wallet(wallet:wallet(), #state{}) -> ok | {error, term()}.
 save_wallet(Wallet, #state{db=DB, wallets=WalletCF}) ->
     PubKeyBin = wallet:pubkey_bin(Wallet),
     {ok, WalletBin} = wallet:to_binary(Wallet),
-    rocksdb:put(DB, WalletCF, PubKeyBin, WalletBin, []).
+    rocksdb:put(DB, WalletCF, PubKeyBin, WalletBin, [{sync, true}]).
+
+-spec delete_wallet(Address::libp2p_crypto:pubkey_bin(), #state{}) -> ok | {error, term()}.
+delete_wallet(Address, #state{db=DB, wallets=WalletCF}) ->
+    rocksdb:delete(DB, WalletCF, Address, [{sync, true}]).
 
 -spec load_db(file:filename_all()) -> {ok, #state{}} | {error, any()}.
 load_db(Dir) ->

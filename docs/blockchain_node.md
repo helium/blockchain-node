@@ -13,12 +13,14 @@ This api follows the json-rpc 2.0 specification. More information available at h
 - [transaction_get](#transaction_get)
 - [pending_transaction_status](#pending_transaction_status)
 - [wallet_create](#wallet_create)
+- [wallet_delete](#wallet_delete)
 - [wallet_list](#wallet_list)
 - [wallet_unlock](#wallet_unlock)
 - [wallet_lock](#wallet_lock)
 - [wallet_is_locked](#wallet_is_locked)
 - [wallet_pay](#wallet_pay)
 - [wallet_pay_multi](#wallet_pay_multi)
+- [wallet_import](#wallet_import)
 - [wallet_export](#wallet_export)
 - [wallet_backup_list](#wallet_backup_list)
 - [wallet_backup_create](#wallet_backup_create)
@@ -373,6 +375,54 @@ Creates a new wallet, encrypted with the given password. The wallet is locked af
 }
 ```
 
+<a name="wallet_delete"></a>
+
+## wallet_delete
+
+Delets a wallet.
+
+### Description
+
+Permanently removes the wallet from the database.
+
+### Parameters
+
+| Name           | Type   | Description                         |
+| -------------- | ------ | ----------------------------------- |
+| params         | object |                                     |
+| params.address | string | B58 address of the wallet to delete |
+
+### Result
+
+| Name   | Type    | Description                            |
+| ------ | ------- | -------------------------------------- |
+| result | boolean | Returns true if the wallet was deleted |
+
+### Examples
+
+#### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_delete",
+  "params": {
+    "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": true
+}
+```
+
 <a name="wallet_list"></a>
 
 ## wallet_list
@@ -681,6 +731,62 @@ Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_0
   "jsonrpc": "2.0",
   "id": "1234567890",
   "result": {}
+}
+```
+
+<a name="wallet_import"></a>
+
+## wallet_import
+
+Import an encrypted wallet.
+
+### Description
+
+Import an encrypted wallet into the wallet database. The password is only used to verify that the wallet can be unlocked and is not stored.
+
+### Parameters
+
+| Name            | Type   | Description                                |
+| --------------- | ------ | ------------------------------------------ |
+| params          | object |                                            |
+| params.password | string | Password used to decrypt the wallet        |
+| params.path     | string | Path to the file to import the wallet from |
+
+### Result
+
+| Name   | Type    | Description                             |
+| ------ | ------- | --------------------------------------- |
+| result | boolean | Returns true if the wallet was imported |
+
+### Errors
+
+| Code | Message | Description                 |
+| ---- | ------- | --------------------------- |
+| -100 |         | Wallet file not found       |
+| -110 |         | Invalid password for wallet |
+
+### Examples
+
+#### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_import",
+  "params": {
+    "password": "a password"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": true
 }
 ```
 
