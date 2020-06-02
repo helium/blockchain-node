@@ -137,12 +137,13 @@ terminate(_Reason, #state{db=DB}) ->
 %%
 
 handle_rpc(<<"wallet_create">>, {Param}) ->
+    KeyMap = libp2p_crypto:generate_key(ed25519),
     Password = case ?jsonrpc_get_param(<<"password">>, Param) of
                    V when is_binary(V) andalso byte_size(V) > 0 -> V;
                    _ -> ?jsonrpc_error(invalid_params)
                end,
     {ok, State} = get_state(),
-    {ok, Wallet} = wallet:new(Password),
+    {ok, Wallet} = wallet:encrypt(KeyMap, Password),
     ok = save_wallet(Wallet, State),
     ?BIN_TO_B58(wallet:pubkey_bin(Wallet));
 
@@ -245,7 +246,7 @@ handle_rpc(<<"wallet_export">>, {Param}) ->
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Wallet not found"});
         {ok, Wallet} ->
-            {ok, WalletBin} = wallet:to_binary(Wallet),
+            WalletBin = wallet:to_binary(Wallet),
             case file:write_file(Path, WalletBin) of
                 ok -> true;
                 {error, _}=Error ->
@@ -357,7 +358,7 @@ get_wallet_list(Itr, {ok, Addr, _}, Acc) ->
 -spec save_wallet(wallet:wallet(), #state{}) -> ok | {error, term()}.
 save_wallet(Wallet, #state{db=DB, wallets=WalletCF}) ->
     PubKeyBin = wallet:pubkey_bin(Wallet),
-    {ok, WalletBin} = wallet:to_binary(Wallet),
+    WalletBin = wallet:to_binary(Wallet),
     rocksdb:put(DB, WalletCF, PubKeyBin, WalletBin, [{sync, true}]).
 
 -spec delete_wallet(Address::libp2p_crypto:pubkey_bin(), #state{}) -> ok | {error, term()}.
