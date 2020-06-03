@@ -137,7 +137,7 @@ terminate(_Reason, #state{db=DB}) ->
 %%
 
 handle_rpc(<<"wallet_create">>, {Param}) ->
-    KeyMap = libp2p_crypto:generate_key(ed25519),
+    KeyMap = libp2p_crypto:generate_keys(ed25519),
     Password = case ?jsonrpc_get_param(<<"password">>, Param) of
                    V when is_binary(V) andalso byte_size(V) > 0 -> V;
                    _ -> ?jsonrpc_error(invalid_params)
