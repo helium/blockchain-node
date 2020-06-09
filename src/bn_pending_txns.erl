@@ -47,9 +47,9 @@ init(Args) ->
 follower_height(#state{db=DB, default=DefaultCF}) ->
     case rocksdb:get(DB, DefaultCF, ?HEIGHT_KEY, []) of
         {ok, <<Height:64/integer-unsigned-little>>} ->
-            Height;
+            bn_txns:snapshot_height(Height);
         not_found ->
-            0;
+            bn_txns:snapshot_height(0);
         {error, _}=Error ->
             ?jsonrpc_error(Error)
     end.

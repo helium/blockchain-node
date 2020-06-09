@@ -309,8 +309,7 @@ mk_payment_txn_v1(Payer, Payee, Amount) ->
                     blockchain_ledger_entry_v1:nonce(Entry) + 1;
                 {error, _} -> 0
             end,
-    Fee = 0,
-    {ok, blockchain_txn_payment_v1:new(Payer, Payee, Amount, Fee, Nonce)}.
+    {ok, blockchain_txn_payment_v1:new(Payer, Payee, Amount, Nonce)}.
 
 -spec mk_payment_txn_v2(Payer::libp2p_crypto:pubkey_bin(), [{Payee::libp2p_crypto:pubkey_bin(), Bones::pos_integer()}])
                        -> {ok, blockchain_txn:txn()} | {error, term()}.
@@ -321,9 +320,8 @@ mk_payment_txn_v2(Payer, PaymentList) ->
                     blockchain_ledger_entry_v1:nonce(Entry) + 1;
                 {error, _} -> 0
             end,
-    Fee = 0,
     Payments = [blockchain_payment_v2:new(Payee, Bones) || {Payee, Bones} <- PaymentList],
-    {ok, blockchain_txn_payment_v2:new(Payer, Payments, Nonce, Fee)}.
+    {ok, blockchain_txn_payment_v2:new(Payer, Payments, Nonce)}.
 
 get_state() ->
     case persistent_term:get(?MODULE, false) of
