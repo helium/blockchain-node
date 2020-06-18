@@ -185,7 +185,7 @@ handle_rpc(<<"wallet_pay">>, {Param}) ->
     Payer = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Param),
     Amount = ?jsonrpc_get_param(<<"bones">>, Param),
-    {ok, Txn} = mk_payment_txn_v1(Payer, Payee, Amount),
+    {ok, Txn} = mk_payment_txn_v1(Payer, Payee, Amount, blockchain_worker:blockchain()),
     case sign(Payer, Txn) of
         {ok, SignedTxn} ->
             {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
@@ -205,7 +205,7 @@ handle_rpc(<<"wallet_pay_multi">>, {Param})  ->
                    _ ->
                        ?jsonrpc_error({invalid_params, "Missing or empty payment list"})
                end,
-    {ok, Txn} = mk_payment_txn_v2(Payer, Payments),
+    {ok, Txn} = mk_payment_txn_v2(Payer, Payments, blockchain_worker:blockchain()),
     case sign(Payer, Txn) of
         {ok, SignedTxn} ->
             {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
@@ -300,20 +300,22 @@ handle_rpc(_, _) ->
 %%
 %% Internal
 %%
--spec mk_payment_txn_v1(Payer::libp2p_crypto:pubkey_bin(), Payee::libp2p_crypto:pubkey_bin(), Bones::pos_integer())
-                       -> {ok, blockchain_txn:txn()} | {error, term()}.
-mk_payment_txn_v1(Payer, Payee, Amount) ->
+-spec mk_payment_txn_v1(Payer::libp2p_crypto:pubkey_bin(), Payee::libp2p_crypto:pubkey_bin(), Bones::pos_integer(),
+                        Chain::blockchain:blockchain()) -> {ok, blockchain_txn:txn()} | {error, term()}.
+mk_payment_txn_v1(Payer, Payee, Amount, Chain) ->
     Ledger = blockchain:ledger(blockchain_worker:blockchain()),
     Nonce = case blockchain_ledger_v1:find_entry(Payer, Ledger) of
                 {ok, Entry} ->
                     blockchain_ledger_entry_v1:nonce(Entry) + 1;
                 {error, _} -> 0
             end,
-    {ok, blockchain_txn_payment_v1:new(Payer, Payee, Amount, Nonce)}.
+    Txn = blockchain_txn_payment_v1:new(Payer, Payee, Amount, Nonce),
+    TxnFee = blockchain_txn_payment_v1:calculate_fee(Txn, Chain),
+    {ok, blockchain_txn_payment_v1:fee(Txn, TxnFee)}.
 
--spec mk_payment_txn_v2(Payer::libp2p_crypto:pubkey_bin(), [{Payee::libp2p_crypto:pubkey_bin(), Bones::pos_integer()}])
-                       -> {ok, blockchain_txn:txn()} | {error, term()}.
-mk_payment_txn_v2(Payer, PaymentList) ->
+-spec mk_payment_txn_v2(Payer::libp2p_crypto:pubkey_bin(), [{Payee::libp2p_crypto:pubkey_bin(), Bones::pos_integer()}],
+                       Chain::blockchain:blockchain()) -> {ok, blockchain_txn:txn()} | {error, term()}.
+mk_payment_txn_v2(Payer, PaymentList, Chain) ->
     Ledger = blockchain:ledger(blockchain_worker:blockchain()),
     Nonce = case blockchain_ledger_v1:find_entry(Payer, Ledger) of
                 {ok, Entry} ->
@@ -321,7 +323,9 @@ mk_payment_txn_v2(Payer, PaymentList) ->
                 {error, _} -> 0
             end,
     Payments = [blockchain_payment_v2:new(Payee, Bones) || {Payee, Bones} <- PaymentList],
-    {ok, blockchain_txn_payment_v2:new(Payer, Payments, Nonce)}.
+    Txn = blockchain_txn_payment_v2:new(Payer, Payments, Nonce),
+    TxnFee = blockchain_txn_payment_v2:calculate_fee(Txn, Chain),
+    {ok, blockchain_txn_payment_v2:fee(Txn, TxnFee)}.
 
 get_state() ->
     case persistent_term:get(?MODULE, false) of
