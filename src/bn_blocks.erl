@@ -1,13 +1,13 @@
 -module(bn_blocks).
 
 -include("bn_jsonrpc.hrl").
+
 -behavior(bn_jsonrpc_handler).
 
 -export([handle_rpc/2]).
 
 handle_rpc(<<"block_height">>, _Params) ->
     bn_txns:follower_height();
-
 handle_rpc(<<"block_get">>, {Param}) ->
     HeightOrHash =
         case ?jsonrpc_get_param(<<"height">>, Param, false) of
@@ -20,9 +20,8 @@ handle_rpc(<<"block_get">>, {Param}) ->
             blockchain_block:to_json(Block, []);
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Block not found: ~p", [Param]});
-        {error, _}=Error ->
+        {error, _} = Error ->
             ?jsonrpc_error(Error)
     end;
-
 handle_rpc(_, _) ->
     ?jsonrpc_error(method_not_found).

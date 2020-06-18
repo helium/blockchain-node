@@ -2,8 +2,8 @@
 
 -export([open_db/2, clean_db/1]).
 
--spec open_db(Dir::file:filename_all(), CFNames::[string()])
-             -> {ok, rocksdb:db_handle(), [rocksdb:cf_handle()]} | {error, any()}.
+-spec open_db(Dir :: file:filename_all(), CFNames :: [string()]) ->
+    {ok, rocksdb:db_handle(), [rocksdb:cf_handle()]} | {error, any()}.
 open_db(Dir, CFNames) ->
     ok = filelib:ensure_dir(Dir),
     GlobalOpts = application:get_env(rocksdb, global_opts, []),
@@ -17,13 +17,13 @@ open_db(Dir, CFNames) ->
         end,
 
     CFOpts = GlobalOpts,
-    case rocksdb:open_with_cf(Dir, DBOptions,  [{CF, CFOpts} || CF <- ExistingCFs]) of
-        {error, _Reason}=Error ->
+    case rocksdb:open_with_cf(Dir, DBOptions, [{CF, CFOpts} || CF <- ExistingCFs]) of
+        {error, _Reason} = Error ->
             Error;
         {ok, DB, OpenedCFs} ->
             L1 = lists:zip(ExistingCFs, OpenedCFs),
             L2 = lists:map(
-                fun(CF) ->
+                fun (CF) ->
                     {ok, CF1} = rocksdb:create_column_family(DB, CF, CFOpts),
                     {CF, CF1}
                 end,

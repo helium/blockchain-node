@@ -1,6 +1,7 @@
 -module(bn_accounts).
 
 -include("bn_jsonrpc.hrl").
+
 -behavior(bn_jsonrpc_handler).
 
 %% jsonrpc_handler
@@ -9,53 +10,50 @@
 %%
 %% jsonrpc_handler
 %%
-
 handle_rpc(<<"account_get">>, {Param}) ->
     Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     Ledger = blockchain:ledger(blockchain_worker:blockchain()),
-    GetBalance = fun() ->
-                         case blockchain_ledger_v1:find_entry(Address, Ledger) of
-                             {ok, Entry} ->
-                                 #{ balance => blockchain_ledger_entry_v1:balance(Entry),
-                                    nonce => blockchain_ledger_entry_v1:nonce(Entry)
-                                  };
-                                _ ->
-                                 #{ balance => 0,
-                                    nonce => 0
-                                  }
-                         end
-                 end,
-    GetSecurities = fun() ->
-                            case blockchain_ledger_v1:find_security_entry(Address, Ledger) of
-                                {ok, Entry} ->
-                                    #{ sec_balance => blockchain_ledger_security_entry_v1:balance(Entry),
-                                       sec_nonce => blockchain_ledger_security_entry_v1:nonce(Entry)
-                                     };
-                                _ ->
-                                    #{ sec_balance => 0,
-                                       sec_nonce => 0
-                                     }
-                            end
-                    end,
-    GetDCs = fun() ->
-                     case blockchain_ledger_v1:find_dc_entry(Address, Ledger) of
-                                {ok, Entry} ->
-                                    #{ dc_balance => blockchain_ledger_data_credits_entry_v1:balance(Entry),
-                                       dc_nonce => blockchain_ledger_data_credits_entry_v1:nonce(Entry)
-                                     };
-                                _ ->
-                                    #{ dc_balance => 0,
-                                       dc_nonce => 0
-                                     }
-                            end
-                    end,
-    lists:foldl(fun(Fun, Map) ->
-                        maps:merge(Map, Fun())
-                end,
+    GetBalance = fun () ->
+        case blockchain_ledger_v1:find_entry(Address, Ledger) of
+            {ok, Entry} ->
                 #{
-                  address => ?BIN_TO_B58(Address)
-                 },
-                [GetBalance, GetSecurities, GetDCs]);
-
+                    balance => blockchain_ledger_entry_v1:balance(Entry),
+                    nonce => blockchain_ledger_entry_v1:nonce(Entry)
+                };
+            _ ->
+                #{balance => 0, nonce => 0}
+        end
+    end,
+    GetSecurities = fun () ->
+        case blockchain_ledger_v1:find_security_entry(Address, Ledger) of
+            {ok, Entry} ->
+                #{
+                    sec_balance => blockchain_ledger_security_entry_v1:balance(Entry),
+                    sec_nonce => blockchain_ledger_security_entry_v1:nonce(Entry)
+                };
+            _ ->
+                #{sec_balance => 0, sec_nonce => 0}
+        end
+    end,
+    GetDCs = fun () ->
+        case blockchain_ledger_v1:find_dc_entry(Address, Ledger) of
+            {ok, Entry} ->
+                #{
+                    dc_balance => blockchain_ledger_data_credits_entry_v1:balance(Entry),
+                    dc_nonce => blockchain_ledger_data_credits_entry_v1:nonce(Entry)
+                };
+            _ ->
+                #{dc_balance => 0, dc_nonce => 0}
+        end
+    end,
+    lists:foldl(
+        fun (Fun, Map) ->
+            maps:merge(Map, Fun())
+        end,
+        #{
+            address => ?BIN_TO_B58(Address)
+        },
+        [GetBalance, GetSecurities, GetDCs]
+    );
 handle_rpc(_, _) ->
     ?jsonrpc_error(method_not_found).

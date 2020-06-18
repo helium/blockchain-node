@@ -1,35 +1,37 @@
 -module(bn_wallets).
 
 -include("bn_jsonrpc.hrl").
+
 -behavior(bn_jsonrpc_handler).
 
 -behavior(gen_server).
 
 %% gen_server
 -export([start_link/1, init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
+
 %% jsonrpc_handler
 -export([handle_rpc/2]).
 
 -define(DB_FILE, "wallets.db").
+
 -define(SERVER, ?MODULE).
+
 -define(KEY_TIMEOUT, 60000).
 
-
--record(state,
-        {
-         dir :: file:filename_all(),
-         db :: rocksdb:db_handle(),
-         default :: rocksdb:cf_handle(),
-         wallets :: rocksdb:cf_handle(),
-
-         keys=#{} :: #{libp2p_crypto:pubkey_bin() => libp2p_crypto:key_map()}
-        }).
+-record(state, {
+    dir :: file:filename_all(),
+    db :: rocksdb:db_handle(),
+    default :: rocksdb:cf_handle(),
+    wallets :: rocksdb:cf_handle(),
+    keys = #{} :: #{libp2p_crypto:pubkey_bin() => libp2p_crypto:key_map()}
+}).
 
 -spec unlock(libp2p_crypto:pubkey_bin(), binary()) -> ok | {error, term()}.
 unlock(Address, Password) ->
     gen_server:call(?SERVER, {unlock, Address, Password}).
 
--spec sign(libp2p_crypto:pubkey_bin(), blockchain_txn:txn()) -> {ok, blockchain_txn:txn()} | {error, term()}.
+-spec sign(libp2p_crypto:pubkey_bin(), blockchain_txn:txn()) ->
+    {ok, blockchain_txn:txn()} | {error, term()}.
 sign(Address, Txn) ->
     gen_server:call(?SERVER, {sign, Address, Txn}).
 
@@ -43,7 +45,6 @@ is_locked(Address) ->
 
 restore(Path, BackupID) ->
     gen_server:call(?SERVER, {restore, Path, BackupID}).
-
 
 %%
 %% gen_server
@@ -75,15 +76,16 @@ handle_call({unlock, Address, Password}, _From, State) ->
                             {reply, {error, Error}, State};
                         {ok, KeyMap} ->
                             timer:send_after(?KEY_TIMEOUT, self(), {key_timeout, Address}),
-                            {reply, ok, State#state{keys=maps:put(Address, KeyMap, State#state.keys)}}
+                            {reply, ok, State#state{
+                                keys = maps:put(Address, KeyMap, State#state.keys)
+                            }}
                     end
             end
     end;
 handle_call({lock, Address}, _From, State) ->
-    {reply, ok, State#state{keys=maps:remove(Address, State#state.keys)}};
+    {reply, ok, State#state{keys = maps:remove(Address, State#state.keys)}};
 handle_call({is_locked, Address}, _From, State) ->
     {reply, not maps:is_key(Address, State#state.keys), State};
-
 handle_call({sign, Address, Txn}, _From, State) ->
     case maps:get(Address, State#state.keys, false) of
         false ->
@@ -92,7 +94,6 @@ handle_call({sign, Address, Txn}, _From, State) ->
             SigFun = libp2p_crypto:mk_sig_fun(PrivKey),
             {reply, {ok, blockchain_txn:sign(Txn, SigFun)}, State}
     end;
-
 handle_call({restore, Path, BackupID}, _From, State) ->
     {ok, Engine} = rocksdb:open_backup_engine(Path),
     case rocksdb:verify_backup(Engine, BackupID) of
@@ -106,61 +107,54 @@ handle_call({restore, Path, BackupID}, _From, State) ->
                         {ok, NewState} ->
                             persistent_term:put(?MODULE, NewState),
                             {reply, ok, NewState};
-                         Error ->
+                        Error ->
                             {reply, Error, State}
                     end
             end
     end;
-
 handle_call(Request, _From, State) ->
     lager:notice("Unhandled call ~p", [Request]),
     {reply, ok, State}.
-
 
 handle_cast(Msg, State) ->
     lager:notice("Unhandled cast ~p", [Msg]),
     {noreply, State}.
 
-
 handle_info({key_timeout, Address}, State) ->
-    {noreply, State#state{keys=maps:remove(Address, State#state.keys)}};
-
+    {noreply, State#state{keys = maps:remove(Address, State#state.keys)}};
 handle_info(Info, State) ->
     lager:notice("Unhandled info ~p", [Info]),
     {noreply, State}.
 
-terminate(_Reason, #state{db=DB}) ->
+terminate(_Reason, #state{db = DB}) ->
     rocksdb:close(DB).
 
 %%
 %% jsonrpc_handler
 %%
-
 handle_rpc(<<"wallet_create">>, {Param}) ->
     KeyMap = libp2p_crypto:generate_keys(ed25519),
-    Password = case ?jsonrpc_get_param(<<"password">>, Param) of
-                   V when is_binary(V) andalso byte_size(V) > 0 -> V;
-                   _ -> ?jsonrpc_error(invalid_params)
-               end,
+    Password =
+        case ?jsonrpc_get_param(<<"password">>, Param) of
+            V when is_binary(V) andalso byte_size(V) > 0 -> V;
+            _ -> ?jsonrpc_error(invalid_params)
+        end,
     {ok, State} = get_state(),
     {ok, Wallet} = wallet:encrypt(KeyMap, Password),
     ok = save_wallet(Wallet, State),
     ?BIN_TO_B58(wallet:pubkey_bin(Wallet));
-
 handle_rpc(<<"wallet_delete">>, {Param}) ->
     Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     {ok, State} = get_state(),
     case delete_wallet(Address, State) of
-        {error, _}=Error ->
+        {error, _} = Error ->
             ?jsonrpc_error(Error);
         ok ->
             true
     end;
-
 handle_rpc(<<"wallet_list">>, _Params) ->
     {ok, State} = get_state(),
     [?BIN_TO_B58(Addr) || Addr <- get_wallet_list(State)];
-
 handle_rpc(<<"wallet_unlock">>, {Param}) ->
     Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     Password = ?jsonrpc_get_param(<<"password">>, Param),
@@ -179,8 +173,6 @@ handle_rpc(<<"wallet_lock">>, {Param}) ->
 handle_rpc(<<"wallet_is_locked">>, {Param}) ->
     Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     is_locked(Address);
-
-
 handle_rpc(<<"wallet_pay">>, {Param}) ->
     Payer = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Param),
@@ -193,18 +185,22 @@ handle_rpc(<<"wallet_pay">>, {Param}) ->
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Wallet is locked"})
     end;
-handle_rpc(<<"wallet_pay_multi">>, {Param})  ->
+handle_rpc(<<"wallet_pay_multi">>, {Param}) ->
     Payer = ?jsonrpc_b58_to_bin(<<"address">>, Param),
-    Payments = case ?jsonrpc_get_param(<<"paymennts">>, Param, false) of
-                   L when is_list(L) andalso length(L) > 0 ->
-                       lists:map(fun(Entry) ->
-                                         Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Entry),
-                                         Amount = ?jsonrpc_get_param(<<"bones">>, Entry),
-                                         {Payee, Amount}
-                                 end, L);
-                   _ ->
-                       ?jsonrpc_error({invalid_params, "Missing or empty payment list"})
-               end,
+    Payments =
+        case ?jsonrpc_get_param(<<"paymennts">>, Param, false) of
+            L when is_list(L) andalso length(L) > 0 ->
+                lists:map(
+                    fun (Entry) ->
+                        Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Entry),
+                        Amount = ?jsonrpc_get_param(<<"bones">>, Entry),
+                        {Payee, Amount}
+                    end,
+                    L
+                );
+            _ ->
+                ?jsonrpc_error({invalid_params, "Missing or empty payment list"})
+        end,
     {ok, Txn} = mk_payment_txn_v2(Payer, Payments, blockchain_worker:blockchain()),
     case sign(Payer, Txn) of
         {ok, SignedTxn} ->
@@ -213,7 +209,6 @@ handle_rpc(<<"wallet_pay_multi">>, {Param})  ->
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Wallet is locked"})
     end;
-
 handle_rpc(<<"wallet_import">>, {Param}) ->
     Password = ?jsonrpc_get_param(<<"password">>, Param),
     Path = ?jsonrpc_get_param(<<"path">>, Param),
@@ -221,11 +216,11 @@ handle_rpc(<<"wallet_import">>, {Param}) ->
     case file:read_file(Path) of
         {error, enoent} ->
             ?jsonrpc_error({not_found, "Path not found"});
-        {error, _}=Error ->
+        {error, _} = Error ->
             ?jsonrpc_error(Error);
         {ok, FileBin} ->
             case wallet:from_binary(FileBin) of
-                {error, _}=Error ->
+                {error, _} = Error ->
                     ?jsonrpc_error(Error);
                 {ok, Wallet} ->
                     case wallet:decrypt(Password, Wallet) of
@@ -237,7 +232,6 @@ handle_rpc(<<"wallet_import">>, {Param}) ->
                     end
             end
     end;
-
 handle_rpc(<<"wallet_export">>, {Param}) ->
     Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     Path = ?jsonrpc_get_param(<<"path">>, Param),
@@ -249,11 +243,9 @@ handle_rpc(<<"wallet_export">>, {Param}) ->
             WalletBin = wallet:to_binary(Wallet),
             case file:write_file(Path, WalletBin) of
                 ok -> true;
-                {error, _}=Error ->
-                    ?jsonrpc_error(Error)
+                {error, _} = Error -> ?jsonrpc_error(Error)
             end
     end;
-
 handle_rpc(<<"wallet_backup_list">>, {Param}) ->
     Path = ?jsonrpc_get_param(<<"path">>, Param),
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
@@ -263,7 +255,7 @@ handle_rpc(<<"wallet_backup_create">>, {Param}) ->
     Path = ?jsonrpc_get_param(<<"path">>, Param),
     NumBackupToKeep = ?jsonrpc_get_param(<<"max_backups">>, Param),
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
-    {ok, #state{db=DB}} = get_state(),
+    {ok, #state{db = DB}} = get_state(),
     ok = rocksdb:create_new_backup(Engine, DB),
     ok = rocksdb:purge_old_backup(Engine, NumBackupToKeep),
     {ok, Info} = rocksdb:get_backup_info(Engine),
@@ -278,7 +270,7 @@ handle_rpc(<<"wallet_backup_delete">>, {Param}) ->
             true;
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Backup not found: ~p", [BackupID]});
-        {error, _}=Error ->
+        {error, _} = Error ->
             ?jsonrpc_error(Error)
     end;
 handle_rpc(<<"wallet_backup_restore">>, {Param}) ->
@@ -289,39 +281,50 @@ handle_rpc(<<"wallet_backup_restore">>, {Param}) ->
             true;
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Backup not found: ~p", [BackupID]});
-        {error, _}=Error ->
+        {error, _} = Error ->
             ?jsonrpc_error(Error)
     end;
-
 handle_rpc(_, _) ->
     ?jsonrpc_error(method_not_found).
-
 
 %%
 %% Internal
 %%
--spec mk_payment_txn_v1(Payer::libp2p_crypto:pubkey_bin(), Payee::libp2p_crypto:pubkey_bin(), Bones::pos_integer(),
-                        Chain::blockchain:blockchain()) -> {ok, blockchain_txn:txn()} | {error, term()}.
+-spec mk_payment_txn_v1(
+    Payer :: libp2p_crypto:pubkey_bin(),
+    Payee :: libp2p_crypto:pubkey_bin(),
+    Bones :: pos_integer(),
+    Chain :: blockchain:blockchain()
+) ->
+    {ok, blockchain_txn:txn()} | {error, term()}.
 mk_payment_txn_v1(Payer, Payee, Amount, Chain) ->
     Ledger = blockchain:ledger(blockchain_worker:blockchain()),
-    Nonce = case blockchain_ledger_v1:find_entry(Payer, Ledger) of
-                {ok, Entry} ->
-                    blockchain_ledger_entry_v1:nonce(Entry) + 1;
-                {error, _} -> 0
-            end,
+    Nonce =
+        case blockchain_ledger_v1:find_entry(Payer, Ledger) of
+            {ok, Entry} ->
+                blockchain_ledger_entry_v1:nonce(Entry) + 1;
+            {error, _} ->
+                0
+        end,
     Txn = blockchain_txn_payment_v1:new(Payer, Payee, Amount, Nonce),
     TxnFee = blockchain_txn_payment_v1:calculate_fee(Txn, Chain),
     {ok, blockchain_txn_payment_v1:fee(Txn, TxnFee)}.
 
--spec mk_payment_txn_v2(Payer::libp2p_crypto:pubkey_bin(), [{Payee::libp2p_crypto:pubkey_bin(), Bones::pos_integer()}],
-                       Chain::blockchain:blockchain()) -> {ok, blockchain_txn:txn()} | {error, term()}.
+-spec mk_payment_txn_v2(
+    Payer :: libp2p_crypto:pubkey_bin(),
+    [{Payee :: libp2p_crypto:pubkey_bin(), Bones :: pos_integer()}],
+    Chain :: blockchain:blockchain()
+) ->
+    {ok, blockchain_txn:txn()} | {error, term()}.
 mk_payment_txn_v2(Payer, PaymentList, Chain) ->
     Ledger = blockchain:ledger(blockchain_worker:blockchain()),
-    Nonce = case blockchain_ledger_v1:find_entry(Payer, Ledger) of
-                {ok, Entry} ->
-                    blockchain_ledger_entry_v1:nonce(Entry) + 1;
-                {error, _} -> 0
-            end,
+    Nonce =
+        case blockchain_ledger_v1:find_entry(Payer, Ledger) of
+            {ok, Entry} ->
+                blockchain_ledger_entry_v1:nonce(Entry) + 1;
+            {error, _} ->
+                0
+        end,
     Payments = [blockchain_payment_v2:new(Payee, Bones) || {Payee, Bones} <- PaymentList],
     Txn = blockchain_txn_payment_v2:new(Payer, Payments, Nonce),
     TxnFee = blockchain_txn_payment_v2:calculate_fee(Txn, Chain),
@@ -335,8 +338,9 @@ get_state() ->
             {ok, State}
     end.
 
--spec get_wallet(libp2p_crypto:pubkey_bin(), #state{}) -> {ok, wallet:wallet()} | {error, term()}.
-get_wallet(Address, #state{db=DB, wallets=WalletCF}) ->
+-spec get_wallet(libp2p_crypto:pubkey_bin(), #state{}) ->
+    {ok, wallet:wallet()} | {error, term()}.
+get_wallet(Address, #state{db = DB, wallets = WalletCF}) ->
     case rocksdb:get(DB, WalletCF, Address, []) of
         not_found ->
             {error, not_found};
@@ -346,7 +350,7 @@ get_wallet(Address, #state{db=DB, wallets=WalletCF}) ->
             Error
     end.
 
-get_wallet_list(#state{db=DB, wallets=WalletCF}) ->
+get_wallet_list(#state{db = DB, wallets = WalletCF}) ->
     {ok, Itr} = rocksdb:iterator(DB, WalletCF, []),
     Wallets = get_wallet_list(Itr, rocksdb:iterator_move(Itr, first), []),
     catch rocksdb:iterator_close(Itr),
@@ -358,32 +362,33 @@ get_wallet_list(Itr, {ok, Addr, _}, Acc) ->
     get_wallet_list(Itr, rocksdb:iterator_move(Itr, next), [Addr | Acc]).
 
 -spec save_wallet(wallet:wallet(), #state{}) -> ok | {error, term()}.
-save_wallet(Wallet, #state{db=DB, wallets=WalletCF}) ->
+save_wallet(Wallet, #state{db = DB, wallets = WalletCF}) ->
     PubKeyBin = wallet:pubkey_bin(Wallet),
     WalletBin = wallet:to_binary(Wallet),
     rocksdb:put(DB, WalletCF, PubKeyBin, WalletBin, [{sync, true}]).
 
--spec delete_wallet(Address::libp2p_crypto:pubkey_bin(), #state{}) -> ok | {error, term()}.
-delete_wallet(Address, #state{db=DB, wallets=WalletCF}) ->
+-spec delete_wallet(Address :: libp2p_crypto:pubkey_bin(), #state{}) ->
+    ok | {error, term()}.
+delete_wallet(Address, #state{db = DB, wallets = WalletCF}) ->
     rocksdb:delete(DB, WalletCF, Address, [{sync, true}]).
 
 -spec load_db(file:filename_all()) -> {ok, #state{}} | {error, any()}.
 load_db(Dir) ->
     case bn_db:open_db(Dir, ["default", "wallets"]) of
-        {error, _Reason}=Error ->
+        {error, _Reason} = Error ->
             Error;
         {ok, DB, [DefaultCF, WalletCF]} ->
             State = #state{
-                       dir=Dir,
-                       db=DB,
-                       default=DefaultCF,
-                       wallets=WalletCF
-                      },
+                dir = Dir,
+                db = DB,
+                default = DefaultCF,
+                wallets = WalletCF
+            },
             compact_db(State),
             {ok, State}
     end.
 
-compact_db(#state{db=DB, default=Default, wallets=WalletCF}) ->
+compact_db(#state{db = DB, default = Default, wallets = WalletCF}) ->
     rocksdb:compact_range(DB, Default, undefined, undefined, []),
     rocksdb:compact_range(DB, WalletCF, undefined, undefined, []),
     ok.
