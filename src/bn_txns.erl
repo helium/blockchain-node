@@ -11,7 +11,7 @@
 %% jsonrpc_handler
 -export([handle_rpc/2]).
 %% api
--export([follower_height/0]).
+-export([follower_height/0, snapshot_height/1]).
 
 
 -define(DB_FILE, "transactions.db").
@@ -42,9 +42,9 @@ init(Args) ->
 follower_height(#state{db=DB, default=DefaultCF}) ->
     case rocksdb:get(DB, DefaultCF, ?HEIGHT_KEY, []) of
         {ok, <<Height:64/integer-unsigned-little>>} ->
-            Height;
+            snapshot_height(Height);
         not_found ->
-            0;
+            snapshot_height(0);
         {error, _}=Error ->
             ?jsonrpc_error(Error)
     end.
@@ -142,3 +142,27 @@ compact_db(#state{db=DB, default=Default, transactions=TransactionsCF}) ->
     rocksdb:compact_range(DB, Default, undefined, undefined, []),
     rocksdb:compact_range(DB, TransactionsCF, undefined, undefined, []),
     ok.
+
+snapshot_height(Height) ->
+    case application:get_env(blockchain, honor_quick_sync, false) == true andalso
+         application:get_env(blockchain, quick_sync_mode, assumed_valid) == blessed_snapshot of
+        true ->
+            Chain = blockchain_worker:blockchain(),
+            {ok, HeadBlock} = blockchain:head_block(Chain),
+            {ok, ChainHeight} = blockchain:height(Chain),
+            EndHeight = case Height > ChainHeight of
+                            true ->
+                                %% we've rolled back
+                                0;
+                            false ->
+                                Height
+                        end,
+            %% find the oldest block we have that's newer than the last known height
+            blockchain:fold_chain(fun(B, Acc) when Acc > EndHeight ->
+                                          blockchain_block:height(B);
+                                     (_, _) ->
+                                          return
+                                  end, ChainHeight, HeadBlock, Chain);
+        false ->
+            Height
+    end.
