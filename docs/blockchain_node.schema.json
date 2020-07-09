@@ -648,9 +648,13 @@
           "path": {
             "type": "string",
             "description": "Path to the backup folder"
+          },
+          "max_backups": {
+            "type": "integer",
+            "description": "Maximum number of backups to maintain in the folder"
           }
         },
-        "required": ["path"]
+        "required": ["path", "max_backups"]
       },
 
       "result": {

@@ -913,10 +913,11 @@ Creates a backup of the backup database in the given path.
 
 ### Parameters
 
-| Name        | Type   | Description               |
-| ----------- | ------ | ------------------------- |
-| params      | object |                           |
-| params.path | string | Path to the backup folder |
+| Name               | Type    | Description                                         |
+| ------------------ | ------- | --------------------------------------------------- |
+| params             | object  |                                                     |
+| params.path        | string  | Path to the backup folder                           |
+| params.max_backups | integer | Maximum number of backups to maintain in the folder |
 
 ### Result
 

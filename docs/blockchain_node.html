@@ -2419,10 +2419,15 @@
     'path': {
       'type': 'string',
       'description': 'Path to the backup folder'
+    },
+    'max_backups': {
+      'type': 'integer',
+      'description': 'Maximum number of backups to maintain in the folder'
     }
   },
   'required': [
-    'path'
+    'path',
+    'max_backups'
   ]
 }</pre>" data-html="true">
   <td>params</td>
@@ -2436,6 +2441,14 @@
   <td>params.path</td>
   <td>string</td>
   <td>Path to the backup folder</td>
+</tr>
+<tr tabindex="1" data-trigger="hover focus" data-toggle="popover" data-content="<pre class='schema-preview'>{
+  'type': 'integer',
+  'description': 'Maximum number of backups to maintain in the folder'
+}</pre>" data-html="true">
+  <td>params.max_backups</td>
+  <td>integer</td>
+  <td>Maximum number of backups to maintain in the folder</td>
 </tr>
 
   </table>
