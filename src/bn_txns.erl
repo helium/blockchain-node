@@ -21,6 +21,7 @@
         {
          db :: rocksdb:db_handle(),
          default :: rocksdb:cf_handle(),
+         heights :: rocksdb:cf_handle(),
          transactions :: rocksdb:cf_handle()
         }).
 
@@ -71,8 +72,9 @@ handle_rpc(<<"transaction_get">>, {Param}) ->
     Hash = ?jsonrpc_b64_to_bin(<<"hash">>, Param),
     {ok, State} = get_state(),
     case get_transaction(Hash, State) of
-        {ok, Txn} ->
-            blockchain_txn:to_json(Txn, []);
+        {ok, {Height, Txn}} ->
+            Json = blockchain_txn:to_json(Txn, []),
+            Json#{block => Height};
         {error, not_found} ->
             ?jsonrpc_error({not_found, "No transaction: ~p", [?BIN_TO_B64(Hash)]});
         {error, _}=Error ->
@@ -102,36 +104,44 @@ get_state() ->
             {ok, State}
     end.
 
--spec get_transaction(Hash::binary(), #state{}) -> {ok, blockchain_txn:txn()} | {error, term()}.
-get_transaction(Hash, #state{db=DB, transactions=TransactionsCF}) ->
+-spec get_transaction(Hash::binary(), #state{}) ->
+          {ok, {Height::pos_integer() | undefined, blockchain_txn:txn()}} | {error, term()}.
+get_transaction(Hash, #state{db=DB, heights=HeightsCF, transactions=TransactionsCF}) ->
     case rocksdb:get(DB, TransactionsCF, Hash, []) of
         {ok, BinTxn} ->
-            {ok, blockchain_txn:deserialize(BinTxn)};
+            Height = case rocksdb:get(DB, HeightsCF, Hash, []) of
+                         not_found -> undefined;
+                         {ok, <<H:64/integer-unsigned-little>>} -> H
+                     end,
+            {ok, {Height, blockchain_txn:deserialize(BinTxn)}};
         not_found ->
             {error, not_found};
         Error ->
             Error
     end.
 
-save_transactions(Height, Transactions, #state{db=DB, default=DefaultCF, transactions=TransactionsCF}) ->
+save_transactions(Height, Transactions, #state{db=DB, default=DefaultCF, heights=HeightsCF, transactions=TransactionsCF}) ->
     {ok, Batch} = rocksdb:batch(),
+    HeightBin = <<Height:64/integer-unsigned-little>>,
     lists:foreach(fun(Txn) ->
                           Hash = blockchain_txn:hash(Txn),
-                          ok = rocksdb:batch_put(Batch, TransactionsCF, Hash, blockchain_txn:serialize(Txn))
+                          ok = rocksdb:batch_put(Batch, TransactionsCF, Hash, blockchain_txn:serialize(Txn)),
+                          ok = rocksdb:batch_put(Batch, HeightsCF, Hash, HeightBin)
                   end, Transactions),
-    rocksdb:batch_put(Batch, DefaultCF, ?HEIGHT_KEY, <<Height:64/integer-unsigned-little>>),
+    rocksdb:batch_put(Batch, DefaultCF, ?HEIGHT_KEY, HeightBin),
     ok = rocksdb:write_batch(DB, Batch, [{sync, true}]).
 
 
 -spec load_db(file:filename_all()) -> {ok, #state{}} | {error, any()}.
 load_db(Dir) ->
-    case bn_db:open_db(Dir, ["default", "transactions"]) of
+    case bn_db:open_db(Dir, ["default", "heights", "transactions"]) of
         {error, _Reason}=Error ->
             Error;
-        {ok, DB, [DefaultCF, TransactionsCF]} ->
+        {ok, DB, [DefaultCF, HeightsCF, TransactionsCF]} ->
             State = #state{
                        db=DB,
                        default=DefaultCF,
+                       heights=HeightsCF,
                        transactions=TransactionsCF
                       },
             compact_db(State),
