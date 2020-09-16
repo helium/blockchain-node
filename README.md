@@ -21,9 +21,9 @@ documentation](https://helium.github.io/blockchain-node/blockchain_node.html)
   `_build/dev/rel/blockchain_node/log/*`.
 
 Once started the application will start syncing the blockchain and
-loading blocks. If this is done from scrath it can take a number of
+loading blocks. If this is done from scratch it can take a number of
 days to download all blocks from the network and aobsorb them in the
-localledger.
+local ledger.
 
 ### File Descriptors
 
