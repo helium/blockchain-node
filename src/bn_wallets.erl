@@ -195,7 +195,7 @@ handle_rpc(<<"wallet_pay">>, {Param}) ->
     end;
 handle_rpc(<<"wallet_pay_multi">>, {Param})  ->
     Payer = ?jsonrpc_b58_to_bin(<<"address">>, Param),
-    Payments = case ?jsonrpc_get_param(<<"paymennts">>, Param, false) of
+    Payments = case ?jsonrpc_get_param(<<"payments">>, Param, false) of
                    L when is_list(L) andalso length(L) > 0 ->
                        lists:map(fun(Entry) ->
                                          Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Entry),
