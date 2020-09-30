@@ -47,9 +47,9 @@ init(Args) ->
 follower_height(#state{db=DB, default=DefaultCF}) ->
     case rocksdb:get(DB, DefaultCF, ?HEIGHT_KEY, []) of
         {ok, <<Height:64/integer-unsigned-little>>} ->
-            bn_txns:snapshot_height(Height);
+            blockchain:snapshot_height(Height);
         not_found ->
-            bn_txns:snapshot_height(0);
+            blockchain:snapshot_height(0);
         {error, _}=Error ->
             ?jsonrpc_error(Error)
     end.
