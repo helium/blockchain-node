@@ -53,8 +53,9 @@ If running on Ubuntu, you will need the following packages installed
 before running `make release`:
 
 ```bash
-wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb
-sudo dpkg -i erlang-solutions_1.0_all.deb
+wget https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb
+sudo dpkg -i erlang-solutions_2.0_all.deb
 sudo apt-get update
-sudo apt install esl-erlang cmake libsodium-dev libssl-dev build-essential
+sudo apt install esl-erlang=1:22.3.4.1-1 cmake libsodium-dev libssl-dev build-essential
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
