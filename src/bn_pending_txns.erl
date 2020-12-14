@@ -85,6 +85,15 @@ handle_rpc(<<"pending_transaction_status">>, {Param}) ->
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Pending transaction not found"})
     end;
+handle_rpc(<<"pending_transaction_submit">>, {Param}) ->
+    BinTxn = ?jsonrpc_b64_to_bin(<<"txn">>, Param),
+    try
+        Txn = blockchain_txn:deserialize(BinTxn),
+        {ok, _} = submit_txn(Txn),
+        blockchain_txn:to_json(Txn, [])
+    catch
+        _:_ -> ?jsonrpc_error(invalid_params)
+    end;
 
 handle_rpc(_, _) ->
     ?jsonrpc_error(method_not_found).

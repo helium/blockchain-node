@@ -12,6 +12,7 @@ This api follows the json-rpc 2.0 specification. More information available at h
 - [acccount_get](#acccount_get)
 - [transaction_get](#transaction_get)
 - [pending_transaction_status](#pending_transaction_status)
+- [pending_transaction_submit](#pending_transaction_submit)
 - [wallet_create](#wallet_create)
 - [wallet_delete](#wallet_delete)
 - [wallet_list](#wallet_list)
@@ -324,6 +325,62 @@ Get the status a previously submitted transaction.
   "jsonrpc": "2.0",
   "id": "1234567890",
   "result": "cleared"
+}
+```
+
+<a name="pending_transaction_submit"></a>
+
+## pending_transaction_submit
+
+Submit a transaction to the pending queue.
+
+### Description
+
+Submits a pending transaction to the pending queue. The transactions needs to be in a blockchain_txn envelope and base64 encoded
+
+### Parameters
+
+| Name       | Type   | Description             |
+| ---------- | ------ | ----------------------- |
+| params     | object |                         |
+| params.txn | string | B64 encoded transaction |
+
+### Result
+
+| Name        | Type   | Description                                                                                           |
+| ----------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| result      | object | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
+| result.hash | string | B64 hash of the transaction                                                                           |
+| result.type | string | The type of the transaction                                                                           |
+
+### Errors
+
+| Code  | Message | Description       |
+| ----- | ------- | ----------------- |
+| -3602 |         | Invalid parameter |
+
+### Examples
+
+#### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "pending_transaction_submit",
+  "params": {
+    "txn": "{ 'txn': 'QoWBCIe...'"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {}
 }
 ```
 
