@@ -1,0 +1,2706 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>blockchain_node</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+      integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+      integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
+      crossorigin="anonymous"
+    ></script>
+
+    <style>
+      h4 {
+        display: inline;
+      }
+
+      p {
+        word-wrap: break-word;
+      }
+
+      .sidenav,
+      .content {
+        overflow-y: auto;
+        height: calc(100vh - 57px);
+        max-height: calc(100vh - 57px);
+      }
+
+      .sidenav {
+        padding: 0;
+        display: flex;
+        flex-wrap: nowrap;
+        flex-direction: column;
+        justify-content: start;
+        align-items: stretch;
+        align-content: start
+      }
+
+      #toc {
+        overflow-y: auto;
+      }
+
+      .card {
+        margin-bottom: 15px;
+      }
+
+      .card-header {
+        cursor: pointer;
+      }
+
+      .content,
+      .card-block,
+      .search-form {
+        padding: 15px;
+      }
+
+      .nav-link {
+        color: #343a40 !important;
+      }
+
+      .nav-pills .nav-link.active,
+      .nav-pills .show > .nav-link {
+        color: #f8f9fa !important;
+        background-color: #343a40 !important;
+      }
+
+      .card.disabled, .nav-link.disabled {
+        opacity: 0.5;
+      }
+    </style>
+  </head>
+
+  <body class="bg-light">
+    <nav
+      class="navbar navbar-dark bg-dark justify-content-between sticky-top border-bottom"
+    >
+      <a class="navbar-brand">blockchain_node 1.0</a>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="sidenav col-2 bg-white border-right">
+          <form class="search-form border-bottom" onsubmit="return false">
+            <input class="form-control search-input" type="search" placeholder="Search" />
+          </form>
+
+          <nav id="toc">
+            <ul class="nav nav-pills flex-column">
+              <li class="nav-item">
+                <a class="nav-link" href="#block_height">block_height</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#block_get">block_get</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#acccount_get">acccount_get</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#transaction_get">transaction_get</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#oracle_price_current">oracle_price_current</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#oracle_price_get">oracle_price_get</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#pending_transaction_status">pending_transaction_status</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#pending_transaction_submit">pending_transaction_submit</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_create">wallet_create</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_delete">wallet_delete</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_list">wallet_list</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_unlock">wallet_unlock</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_lock">wallet_lock</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_is_locked">wallet_is_locked</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_pay">wallet_pay</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_pay_multi">wallet_pay_multi</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_import">wallet_import</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_export">wallet_export</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_backup_list">wallet_backup_list</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_backup_create">wallet_backup_create</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_backup_delete">wallet_backup_delete</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#wallet_backup_restore">wallet_backup_restore</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="content col-10" data-spy="scroll" data-target="#toc">
+          <div class="card border">
+            <div class="card-block">An API to the Helium blockchain-node.<br/>This api follows the json-rpc 2.0 specification. More information available at http://www.jsonrpc.org/specification.</div>
+          </div>
+
+          <div class="card method" id="block_height">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#block_height-content"
+            >
+              <h4>
+                <span>block_height</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">blocks</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="block_height-content">
+              <p>Gets the stored height of the blockchain.</p>
+              
+              <p>Gets the stored height of the blockchain.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Block height</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "block_height"
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": 318492
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="block_get">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#block_get-content"
+            >
+              <h4>
+                <span>block_get</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">blocks</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="block_get-content">
+              <p>Get a block by height or hash.</p>
+              
+              <p>Gets a block with it's transaction hashes given a block height or block hash.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params?.height</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Block height to fetch</td>
+                        </tr>
+                        <tr>
+                          <td>params?.hash</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Block hash to fetch</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Block details</td>
+                        </tr>
+                        <tr>
+                          <td>result.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Hash of block</td>
+                        </tr>
+                        <tr>
+                          <td>result.height</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Height of block</td>
+                        </tr>
+                        <tr>
+                          <td>result.prev_hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Hash of previous block</td>
+                        </tr>
+                        <tr>
+                          <td>result.time</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Time of block in seconds from epoch</td>
+                        </tr>
+                        <tr>
+                          <td>result.transactions</td>
+                          <td>array</td>
+                          <td></td>
+                          <td>Block transaction hashes</td>
+                        </tr>
+                        <tr>
+                          <td>result.transactions[]</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Transaction hash</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Block not found</td>
+                        </tr>
+                        <tr>
+                          <td>-150</td>
+                          <td></td>
+                          <td>Failed to get block</td>
+                        </tr>
+                        <tr>
+                          <td>-3602</td>
+                          <td></td>
+                          <td>Invalid parameter</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "block_get",
+  "params": {
+    "height": 318492
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "hash": "vX_PzD2DvIQZPlpM_LiDCCewpWuZkwcdAhjnJXeg5Gk",
+    "height": 318492,
+    "prev_hash": "OLv5ah-94zg3ySJK5x50-W6Kw4gd510ikhpbByq37ZU",
+    "time": 1588558709,
+    "transactions": [
+      "wexZNzv5nlLI9riuN8WDaBS8yxhGwfFBYK4MVSGDHis",
+      "nBifAlkm6d6b2kPclJbKI8T4rjefgwhsZxKPUHXFJSM",
+      "k_ZS64CexnpvYfwQLjNytKBHrGrZMe8hI_lHpyD6Tx0",
+      "ER_N9N58gsIkPubq0tSlrWZUtdD1ij8TsEqMZDGQuSI",
+      "bsnMBjroAfiuyQe1lI24zGTeqtIKKBDPbqlLokgxQg8",
+      "39Sj-bprwSiI28DMFZid0pXsTqEvS-tTZa6zMyyE_ig",
+      "sqMRtZLeBFgOpvB_tOOa2H1UVXNFJc-9K8qYfdJMRME",
+      "gPbkpNBhuQrZAbLjkkeUlVBjXMHTWk5AJn0GEK8GRgE",
+      "pnDJ1K5ydeABq3Zy1xV_ey0TF3FouDScqKk1lPqnUsU",
+      "Y3sNXBPfmt1SRPhXbG3mK9W2kEAvnFWBLb77ATADmv0",
+      "utKCgooy2wb6EK6n8S-hln16ugZhwnUdfRUWv6MOBGE",
+      "-Zj-qfR1VB0NyIUavkZgr5qzPDxkIxIM1WZdvs1hkRk",
+      "-BpXPSMylHwUbU3FtHzxMD_X5smuHqSi-d3DB0vllmQ",
+      "t6BWSO0nIvIO_wpiJOjCMd7hO3rIWSapF-p6IybQAjg",
+      "yCFtd4m34B8PNHOsFH708bPHKW9JuWe3iFoChkgpLdw",
+      "yrbiQ4uPQQYjBJN5YOc73CkBWx3Y9354sHymKqwWJUA",
+      "TsGVx5z8Ozk0jHGfBS0heK8tBpcHjSgyzvD4rkCbnKk",
+      "NrS5Q4RCIuECKt0cb3mrnPdLQtrS9hSQudiZAl5ZObI",
+      "4lsxf5RUK66CrLcG8CqCUNUq5V5onvz11FZPHR2QLzI",
+      "Mw080p4DaYLW0xhRJh4fvnfDfJ7I1Iz4idqUtTZwdu4"
+    ]
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="acccount_get">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#acccount_get-content"
+            >
+              <h4>
+                <span>acccount_get</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">accounts</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="acccount_get-content">
+              <p>Get account details.</p>
+              
+              <p>Get account details for a given account address.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the account to fetch</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Account</td>
+                        </tr>
+                        <tr>
+                          <td>result.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the account</td>
+                        </tr>
+                        <tr>
+                          <td>result.balance</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>HNT balance of the account in bones</td>
+                        </tr>
+                        <tr>
+                          <td>result.nonce</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>The current nonce for the account</td>
+                        </tr>
+                        <tr>
+                          <td>result.dc_balance</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Data credit balance of the account</td>
+                        </tr>
+                        <tr>
+                          <td>result.dc_nonce</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>The current data credit nonce for the account</td>
+                        </tr>
+                        <tr>
+                          <td>result.sec_balance</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Security token balance of the account</td>
+                        </tr>
+                        <tr>
+                          <td>result.sec_nonce</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>The current security token nonce for the account</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "acccount_get",
+  "params": {}
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
+    "balance": 1000,
+    "nonce": 3,
+    "dc_balance": 0,
+    "dc_nonce": 0,
+    "sec_balance": 0,
+    "sec_nonce": 0
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="transaction_get">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#transaction_get-content"
+            >
+              <h4>
+                <span>transaction_get</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">transactions</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="transaction_get-content">
+              <p>Get transaction details.</p>
+              
+              <p>Get details for a given transaction hash.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 hash of the transaction to fetch</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+                        </tr>
+                        <tr>
+                          <td>result.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 hash of the transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result.type</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>The type of the transaction</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Transaction not found</td>
+                        </tr>
+                        <tr>
+                          <td>-150</td>
+                          <td></td>
+                          <td>Failed to get transaction</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "transaction_get",
+  "params": {}
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {}
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="oracle_price_current">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#oracle_price_current-content"
+            >
+              <h4>
+                <span>oracle_price_current</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">oracles</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="oracle_price_current-content">
+              <p>Gets the current oracle price.</p>
+              
+              <p>Gets the oracle price at the current height of the blockchain.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Oracle Price</td>
+                        </tr>
+                        <tr>
+                          <td>result.price</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>The oracle price at the indicated height</td>
+                        </tr>
+                        <tr>
+                          <td>result.height</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>The block height of the oracle price</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "oracle_price_current"
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "price": 131069500,
+    "height": 633936
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="oracle_price_get">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#oracle_price_get-content"
+            >
+              <h4>
+                <span>oracle_price_get</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">oracles</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="oracle_price_get-content">
+              <p>Gets an oracle price at a height.</p>
+              
+              <p>Gets the oracle price at the given height of the blockchain (if known).</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.height</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Block height to get the oracle price for.</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Oracle Price</td>
+                        </tr>
+                        <tr>
+                          <td>result.price</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>The oracle price at the indicated height</td>
+                        </tr>
+                        <tr>
+                          <td>result.height</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>The block height of the oracle price</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "oracle_price_get",
+  "params": {}
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "price": 131069500,
+    "height": 633936
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="pending_transaction_status">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#pending_transaction_status-content"
+            >
+              <h4>
+                <span>pending_transaction_status</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">pending transactions</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="pending_transaction_status-content">
+              <p>Get pending transaction status.</p>
+              
+              <p>Get the status a previously submitted transaction.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 hash of the pending transaction to fetch</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>One of 'pending', 'cleared', 'not_found' or a failure reason</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Pending transaction not found</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "pending_transaction_status",
+  "params": {
+    "hash": "xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": "cleared"
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="pending_transaction_submit">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#pending_transaction_submit-content"
+            >
+              <h4>
+                <span>pending_transaction_submit</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">pending transactions</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="pending_transaction_submit-content">
+              <p>Submit a transaction to the pending queue.</p>
+              
+              <p>Submits a pending transaction to the pending queue. The transactions needs to be in a blockchain_txn envelope and base64 encoded</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.txn</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 encoded transaction</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+                        </tr>
+                        <tr>
+                          <td>result.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 hash of the transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result.type</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>The type of the transaction</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-3602</td>
+                          <td></td>
+                          <td>Invalid parameter</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "pending_transaction_submit",
+  "params": {
+    "txn": "{ 'txn': 'QoWBCIe...'"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {}
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_create">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_create-content"
+            >
+              <h4>
+                <span>wallet_create</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_create-content">
+              <p>Create a new wallet.</p>
+              
+              <p>Creates a new wallet, encrypted with the given password. The wallet is locked after creation.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.password</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Password used to encrypt the wallet</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>The B58 encoded public address of the wallet</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_create",
+  "params": {
+    "password": "a password"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_delete">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_delete-content"
+            >
+              <h4>
+                <span>wallet_delete</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_delete-content">
+              <p>Delets a wallet.</p>
+              
+              <p>Permanently removes the wallet from the database.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the wallet to delete</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>boolean</td>
+                          <td></td>
+                          <td>Returns true if the wallet was deleted</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_delete",
+  "params": {
+    "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": true
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_list">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_list-content"
+            >
+              <h4>
+                <span>wallet_list</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_list-content">
+              <p>List all wallets.</p>
+              
+              <p>Lists the public keys of all wallets.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>array</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>result[]</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>The B58 encoded public address of a wallet</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_list"
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": [
+    "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_unlock">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_unlock-content"
+            >
+              <h4>
+                <span>wallet_unlock</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_unlock-content">
+              <p>Unlock a wallet for signing.</p>
+              
+              <p>Unlock a wallet for signing. The wallet will be unlocked for 60 seonds.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the wallet to unlock</td>
+                        </tr>
+                        <tr>
+                          <td>params.password</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Password used to decrypt the wallet</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>boolean</td>
+                          <td></td>
+                          <td>Returns true if the wallet is unlocked</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Wallet not found</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_unlock",
+  "params": {
+    "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
+    "password": "a password"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": true
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_lock">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_lock-content"
+            >
+              <h4>
+                <span>wallet_lock</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_lock-content">
+              <p>Lock a wallet.</p>
+              
+              <p>Locks a previously unlocked wallet.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the wallet to lock</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>boolean</td>
+                          <td></td>
+                          <td>Returns true regardless of whether the wallet is found or not</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_lock",
+  "params": {
+    "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": true
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_is_locked">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_is_locked-content"
+            >
+              <h4>
+                <span>wallet_is_locked</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_is_locked-content">
+              <p>Checks if a wallet is locked.</p>
+              
+              <p>Checks if a wallet is unlocked.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the wallet to check</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>boolean</td>
+                          <td></td>
+                          <td>Returns true if the wallet is locked or uknown</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_is_locked",
+  "params": {
+    "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": true
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_pay">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_pay-content"
+            >
+              <h4>
+                <span>wallet_pay</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_pay-content">
+              <p>Send a payment to another account.</p>
+              
+              <p>Sends a single payment in bones to a given account address. Note that 1 HNT it 100_000_000 bones</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the payer wallet</td>
+                        </tr>
+                        <tr>
+                          <td>params.payee</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the payee account</td>
+                        </tr>
+                        <tr>
+                          <td>params.bones</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Amount in bones to send</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+                        </tr>
+                        <tr>
+                          <td>result.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 hash of the transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result.type</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>The type of the transaction</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Wallet not found or locked</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_pay",
+  "params": {
+    "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
+    "payee": "13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH",
+    "bones": 1000
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {}
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_pay_multi">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_pay_multi-content"
+            >
+              <h4>
+                <span>wallet_pay_multi</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_pay_multi-content">
+              <p>Send multiple paymens in a single transation.</p>
+              
+              <p>Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_000_000 bones</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the payer wallet</td>
+                        </tr>
+                        <tr>
+                          <td>params.payments</td>
+                          <td>array</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.payments[]</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.payments[]?.payee</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the payee account</td>
+                        </tr>
+                        <tr>
+                          <td>params.payments[]?.bones</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Amount in bones to send</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+                        </tr>
+                        <tr>
+                          <td>result.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 hash of the transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result.type</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>The type of the transaction</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Wallet not found or locked</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_pay_multi",
+  "params": {
+    "payments": [
+      {}
+    ]
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {}
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_import">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_import-content"
+            >
+              <h4>
+                <span>wallet_import</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_import-content">
+              <p>Import an encrypted wallet.</p>
+              
+              <p>Import an encrypted wallet into the wallet database. The password is only used to verify that the wallet can be unlocked and is not stored.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.password</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Password used to decrypt the wallet</td>
+                        </tr>
+                        <tr>
+                          <td>params.path</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Path to the file to import the wallet from</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>boolean</td>
+                          <td></td>
+                          <td>Returns true if the wallet was imported</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Wallet file not found</td>
+                        </tr>
+                        <tr>
+                          <td>-110</td>
+                          <td></td>
+                          <td>Invalid password for wallet</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_import",
+  "params": {
+    "password": "a password"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": true
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_export">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_export-content"
+            >
+              <h4>
+                <span>wallet_export</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_export-content">
+              <p>Export an encrypted wallet to a given path.</p>
+              
+              <p>Exports an encrypted wallet to the given path.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the payer wallet</td>
+                        </tr>
+                        <tr>
+                          <td>params.path</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Path to the file to save the wallet to</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+                        </tr>
+                        <tr>
+                          <td>result.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 hash of the transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result.type</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>The type of the transaction</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Wallet not found</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_export",
+  "params": {}
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {}
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_backup_list">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_backup_list-content"
+            >
+              <h4>
+                <span>wallet_backup_list</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                  <span class="badge badge-light">backups</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_backup_list-content">
+              <p>Lists information on the list of backups in the given path.</p>
+              
+              <p>Backup list information includes the backup ID, size, and the time the backup was created.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.path</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Path to the backup folder</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>array</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>result[]</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>result[].backup_id</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>ID of the backup</td>
+                        </tr>
+                        <tr>
+                          <td>result[].number_files</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Number of files in the backup</td>
+                        </tr>
+                        <tr>
+                          <td>result[].size</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Size of backup, in bytes</td>
+                        </tr>
+                        <tr>
+                          <td>result[].timestamp</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Timestamp (seconds since epoch) of backup</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_backup_list",
+  "params": {}
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": [
+    {
+      "backup_id": 2,
+      "number_files": 3
+    }
+  ]
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_backup_create">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_backup_create-content"
+            >
+              <h4>
+                <span>wallet_backup_create</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                  <span class="badge badge-light">backups</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_backup_create-content">
+              <p>Creates a backup of the wallet database.</p>
+              
+              <p>Creates a backup of the backup database in the given path.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.path</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Path to the backup folder</td>
+                        </tr>
+                        <tr>
+                          <td>params.max_backups</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Maximum number of backups to maintain in the folder</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>result.backup_id</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>ID of the backup</td>
+                        </tr>
+                        <tr>
+                          <td>result.number_files</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Number of files in the backup</td>
+                        </tr>
+                        <tr>
+                          <td>result.size</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Size of backup, in bytes</td>
+                        </tr>
+                        <tr>
+                          <td>result.timestamp</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Timestamp (seconds since epoch) of backup</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_backup_create",
+  "params": {}
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "backup_id": 2,
+    "number_files": 3
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_backup_delete">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_backup_delete-content"
+            >
+              <h4>
+                <span>wallet_backup_delete</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                  <span class="badge badge-light">backups</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_backup_delete-content">
+              <p>Delete a backup.</p>
+              
+              <p>Delete the backup with the given ID from the given backup path.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.path</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Path to the backup folder</td>
+                        </tr>
+                        <tr>
+                          <td>params.backup_id</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Backup ID to delete</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>boolean</td>
+                          <td></td>
+                          <td>True if the backup was deleted succesfully</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Backup not found</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_backup_delete",
+  "params": {}
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890"
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_backup_restore">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_backup_restore-content"
+            >
+              <h4>
+                <span>wallet_backup_restore</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                  <span class="badge badge-light">backups</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_backup_restore-content">
+              <p>Restore the wallet database.</p>
+              
+              <p>Restores the wallet database from the backup ID in the given backup folder.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.path</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Path to the backup folder</td>
+                        </tr>
+                        <tr>
+                          <td>params.backup_id</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Backup ID to restore from</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>boolean</td>
+                          <td></td>
+                          <td>True if the backup was restored succesfully</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Backup not found</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "wallet_backup_restore",
+  "params": {}
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890"
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      $.expr[":"].contains = $.expr.createPseudo(function(arg) {
+        return function(elem) {
+          return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+        };
+      });
+
+      $(".search-input").on("paste keyup search", (event) => {
+        const inputValue = event.target.value;
+        
+        $(`a`).removeClass("disabled");
+
+        if(inputValue) {
+          $(`.card.method:contains("${inputValue}")`).removeClass("disabled");
+          $(`.card.method:contains("${inputValue}") .collapse`).collapse("show");
+          $(`.card.method:not(:contains("${inputValue}"))`).addClass("disabled");
+          $(`.card.method:not(:contains("${inputValue}")) .collapse`).collapse("hide");
+          $(`.card.method:not(:contains("${inputValue}"))`).each((index, element) => {
+           $(`a[href='#${element.id}']`).addClass("disabled");
+          });
+
+          document.querySelector('.card.method:not(.disabled)').scrollIntoView();
+        }
+        else {
+          $(".card.method").removeClass("disabled");
+          $(".card.method .collapse").collapse("show");
+        }
+      });
+    </script>
+  </body>
+</html>
