@@ -8,8 +8,8 @@ follows the blockchain and exposes functionality using a JSONRPC 2.0 API.
 ## Documentation
 
 See [API endpoint
-documentation](https://helium.github.io/blockchain-node/blockchain_node.html)
-(in [markdown format](docs/blockchain_node.md)).
+documentation](https://helium.github.io/blockchain-node/blockchain_node-reference.html)
+(in [markdown format](docs/blockchain_node-reference.md)).
 
 ## Developer Usage
 

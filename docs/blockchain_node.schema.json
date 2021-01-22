@@ -124,6 +124,26 @@
         "size",
         "timestamp"
       ]
+    },
+    "oracle_price": {
+      "type": "object",
+      "description": "Oracle Price",
+      "properties": {
+        "price": {
+          "type": "number",
+          "description": "The oracle price at the indicated height",
+          "example": 131069500
+        },
+        "height": {
+          "type": "number",
+          "description": "The block height of the oracle price",
+          "example": 633936
+        }
+      },
+      "required": [
+        "price",
+        "height"
+      ]
     }
   },
   "methods": {
@@ -277,6 +297,38 @@
           "description": "Failed to get transaction"
         }
       ]
+    },
+    "oracle_price_current": {
+      "summary": "Gets the current oracle price.",
+      "description": "Gets the oracle price at the current height of the blockchain.",
+      "tags": [
+        "oracles"
+      ],
+      "result": {
+        "$ref": "#/definitions/oracle_price"
+      }
+    },
+    "oracle_price_get": {
+      "summary": "Gets an oracle price at a height.",
+      "description": "Gets the oracle price at the given height of the blockchain (if known).",
+      "tags": [
+        "oracles"
+      ],
+      "params": {
+        "type": "object",
+        "properties": {
+          "height": {
+            "type": "number",
+            "description": "Block height to get the oracle price for."
+          }
+        },
+        "required": [
+          "height"
+        ]
+      },
+      "result": {
+        "$ref": "#/definitions/oracle_price"
+      }
     },
     "pending_transaction_status": {
       "summary": "Get pending transaction status.",
