@@ -33,6 +33,8 @@ start_link() ->
 init([]) ->
     erlang:system_flag(fullsweep_after, 0),
 
+    ok = libp2p_crypto:set_network(application:get_env(blockchain, network, mainnet)),
+
     SupFlags = #{strategy => one_for_all, intensity => 0, period => 1},
     SeedNodes =
         case application:get_env(blockchain, seed_nodes) of
