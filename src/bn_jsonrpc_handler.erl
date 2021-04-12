@@ -33,6 +33,8 @@ handle_rpc(<<"block_", _/binary>> = Method, Params) ->
     bn_blocks:handle_rpc(Method, Params);
 handle_rpc(<<"transaction_", _/binary>> = Method, Params) ->
     bn_txns:handle_rpc(Method, Params);
+handle_rpc(<<"implicit_burn_", _/binary>> = Method, Params) ->
+    bn_implicit_burn:handle_rpc(Method, Params);
 handle_rpc(<<"pending_transaction_", _/binary>> = Method, Params) ->
     bn_pending_txns:handle_rpc(Method, Params);
 handle_rpc(<<"account_", _/binary>> = Method, Params) ->
