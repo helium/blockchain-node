@@ -11,10 +11,10 @@
 
 handle_rpc(<<"implicit_burn_get">>, {Param}) ->
     Hash = ?jsonrpc_b64_to_bin(<<"hash">>, Param),
-    Ledger = blockchain:ledger(blockchain_worker:blockchain()),
-    case blockchain_ledger_v1:find_implicit_burn(Hash, Ledger) of
+    Chain = blockchain_worker:blockchain(),
+    case blockchain:get_implicit_burn(Hash, Chain) of
         {ok, ImplicitBurn} ->
-            blockchain_ledger_implicit_burn_v1:to_json(ImplicitBurn, []);
+            blockchain_implicit_burn:to_json(ImplicitBurn, []);
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Implicit burn not found for transaction hash: ~p", [Param]});
         {error, _}=Error ->
