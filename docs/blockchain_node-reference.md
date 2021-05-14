@@ -9,7 +9,7 @@ This api follows the json-rpc 2.0 specification. More information available at h
 
 - [block_height](#block_height)
 - [block_get](#block_get)
-- [acccount_get](#acccount_get)
+- [account_get](#account_get)
 - [transaction_get](#transaction_get)
 - [oracle_price_current](#oracle_price_current)
 - [oracle_price_get](#oracle_price_get)
@@ -160,9 +160,9 @@ Gets a block with it's transaction hashes given a block height or block hash.
 }
 ```
 
-<a name="acccount_get"></a>
+<a name="account_get"></a>
 
-## acccount_get
+## account_get
 
 Get account details.
 
@@ -198,7 +198,7 @@ Get account details for a given account address.
 {
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "method": "acccount_get",
+  "method": "account_get",
   "params": {}
 }
 ```
