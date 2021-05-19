@@ -57,7 +57,7 @@ jobs:
       # Automatically uploads debs in current directory
       - name: Upload packagecloud
         uses: lpenz/ghaction-packagecloud@master
-          with:
-            repository: helium/internal
+        with:
+          repository: helium/internal
           env:
             PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
