@@ -2,7 +2,7 @@
 
 -include("bn_jsonrpc.hrl").
 
--behaviour(blockchain_follower).
+% -behaviour(blockchain_follower).
 
 -behavior(bn_jsonrpc_handler).
 

@@ -1,6 +1,6 @@
 -module(bn_pending_txns).
 
--behavior(blockchain_follower).
+% -behavior(blockchain_follower).
 
 -include("bn_jsonrpc.hrl").
 
