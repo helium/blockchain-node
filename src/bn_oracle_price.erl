@@ -1,6 +1,6 @@
 -module(bn_oracle_price).
 
--behavior(blockchain_follower).
+% -behavior(blockchain_follower).
 
 -include("bn_jsonrpc.hrl").
 
