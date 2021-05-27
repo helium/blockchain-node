@@ -197,7 +197,7 @@
         }
       ]
     },
-    "acccount_get": {
+    "account_get": {
       "summary": "Get account details.",
       "description": "Get account details for a given account address.",
       "tags": [
