@@ -5,7 +5,7 @@ on:
     tags: "*"
 
 jobs:
-  package:
+  artifacts:
     runs-on: ubuntu-18.04
     container: heliumsystems/builder-erlang:2
 
@@ -40,7 +40,7 @@ jobs:
           fpm_args: '_build/prod/rel/=/var/helium'
           fpm_opts: |
             -n blockchain-node \
-            -v ${{ steps.get-tag.outputs.tag }}
+            -v ${{ steps.get-tag.outputs.tag }} \
             -s dir \
             -t deb \
             --depends libssl1.1 \
