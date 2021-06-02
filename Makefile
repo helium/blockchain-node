@@ -51,5 +51,23 @@ stop:
 console:
 	./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node remote_console
 
+docker-build:
+	docker build -t helium/node .
+
+docker-clean: docker-stop
+	docker rm node
+
+docker-start:
+	mkdir -p $(HOME)/node_data
+	docker run -d --init \
+	--publish 2154:2154/tcp \
+	--publish 4467:4467 \
+	--name node \
+	--mount type=bind,source=$(HOME)/node_data,target=/var/data \
+	helium/node
+
+docker-stop:
+	docker stop node
+
 docs:
 	$(MAKE) -C docs
