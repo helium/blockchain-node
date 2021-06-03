@@ -38,15 +38,7 @@ jobs:
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: '_build/prod/rel/=/var/helium'
-          fpm_opts: |
-            -n blockchain-node \
-            -v ${{ steps.get-tag.outputs.tag }} \
-            -s dir \
-            -t deb \
-            --depends libssl1.1 \
-            --depends libsodium23 \
-            --deb-systemd deb/blockchain-node.service \
-            --deb-no-default-config-files
+          fpm_opts: "-n blockchain-node -v ${{ steps.get-tag.outputs.tag }} -s dir -t deb --depends libssl1.1 --depends libsodium23 --deb-systemd deb/blockchain-node.service --deb-no-default-config-files"
 
       - name: Upload deb artifact
         uses: actions/upload-artifact@v2
@@ -59,5 +51,5 @@ jobs:
         uses: lpenz/ghaction-packagecloud@master
         with:
           repository: helium/internal
-          env:
-            PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+        env:
+          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
