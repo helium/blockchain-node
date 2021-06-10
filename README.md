@@ -59,3 +59,42 @@ sudo apt-get update
 sudo apt install esl-erlang=1:22.3.4.1-1 cmake libsodium-dev libssl-dev build-essential
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
+## Using Docker
+
+### Building the Docker Image
+
+`make docker-build`
+
+### Running the Docker Container
+
+`make docker-start`
+
+### Updating Docker
+
+Navigate to your copy of the `blockchain-node` repository.
+
+`cd /path/to/blockchain-node`
+
+Stop the Node.
+
+`make docker-stop`
+
+Update the repository.
+
+`git pull`
+
+Remove the existing Docker container.
+
+`make docker-clean`
+
+Rebuild the Docker image.
+
+`make docker-build`
+
+Run the updated Docker container.
+
+`make docker-start`
+
+Log the Node output.
+
+`tail -f $HOME/node_data/log/console.log`
