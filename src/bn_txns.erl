@@ -28,7 +28,8 @@
     db :: rocksdb:db_handle(),
     default :: rocksdb:cf_handle(),
     heights :: rocksdb:cf_handle(),
-    transactions :: rocksdb:cf_handle()
+    transactions :: rocksdb:cf_handle(),
+    json :: rocksdb:cf_handle()
 }).
 
 requires_ledger() -> false.
@@ -60,7 +61,14 @@ load_block(_Hash, Block, _Sync, _Ledger, State = #state{}) ->
     BlockHeight = blockchain_block_v1:height(Block),
     Transactions = blockchain_block:transactions(Block),
     lager:info("Loading Block ~p (~p transactions)", [BlockHeight, length(Transactions)]),
-    ok = save_transactions(BlockHeight, Transactions, State),
+    Chain = blockchain_worker:blockchain(),
+    ok = save_transactions(
+        BlockHeight,
+        Transactions,
+        blockchain:ledger(Chain),
+        Chain,
+        State
+    ),
     {ok, State}.
 
 terminate(_Reason, #state{db = DB}) ->
@@ -73,10 +81,9 @@ terminate(_Reason, #state{db = DB}) ->
 handle_rpc(<<"transaction_get">>, {Param}) ->
     Hash = ?jsonrpc_b64_to_bin(<<"hash">>, Param),
     {ok, State} = get_state(),
-    case get_transaction(Hash, State) of
-        {ok, {Height, Txn}} ->
-            Json = blockchain_txn:to_json(Txn, []),
-            Json#{block => Height};
+    case get_transaction_json(Hash, State) of
+        {ok, Json} ->
+            Json;
         {error, not_found} ->
             ?jsonrpc_error({not_found, "No transaction: ~p", [?BIN_TO_B64(Hash)]});
         {error, _} = Error ->
@@ -117,22 +124,53 @@ get_transaction(Hash, #state{db = DB, heights = HeightsCF, transactions = Transa
             Error
     end.
 
-save_transactions(Height, Transactions, #state{
+-spec get_transaction_json(Hash :: binary(), #state{}) ->
+    {ok, blockchain_json:json_object()} | {error, term()}.
+get_transaction_json(Hash, State = #state{db = DB, json = JsonCF}) ->
+    case rocksdb:get(DB, JsonCF, Hash, []) of
+        {ok, BinJson} ->
+            {ok, jsone:decode(BinJson, [])};
+        not_found ->
+            case get_transaction(Hash, State) of
+                {ok, {Height, Txn}} ->
+                    Json = blockchain_txn:to_json(Txn, []),
+                    Json#{block => Height};
+                Error ->
+                    Error
+            end;
+        Error ->
+            Error
+    end.
+
+save_transactions(Height, Transactions, Ledger, Chain, #state{
     db = DB,
     default = DefaultCF,
     heights = HeightsCF,
-    transactions = TransactionsCF
+    transactions = TransactionsCF,
+    json = JsonCF
 }) ->
     {ok, Batch} = rocksdb:batch(),
     HeightBin = <<Height:64/integer-unsigned-little>>,
     lists:foreach(
         fun (Txn) ->
             Hash = blockchain_txn:hash(Txn),
+            Json =
+                try blockchain_txn:to_json(Txn, [{ledger, Ledger}, {chain, Chain}])
+                catch
+                    _:_ ->
+                        blockchain_txn:to_json(Txn, [])
+                end,
             ok = rocksdb:batch_put(
                 Batch,
                 TransactionsCF,
                 Hash,
                 blockchain_txn:serialize(Txn)
+            ),
+            ok = rocksdb:batch_put(
+                Batch,
+                JsonCF,
+                Hash,
+                jsone:encode(Json, [undefined_as_null])
             ),
             ok = rocksdb:batch_put(Batch, HeightsCF, Hash, HeightBin)
         end,
@@ -143,21 +181,23 @@ save_transactions(Height, Transactions, #state{
 
 -spec load_db(file:filename_all()) -> {ok, #state{}} | {error, any()}.
 load_db(Dir) ->
-    case bn_db:open_db(Dir, ["default", "heights", "transactions"]) of
+    case bn_db:open_db(Dir, ["default", "heights", "transactions", "json"]) of
         {error, _Reason} = Error ->
             Error;
-        {ok, DB, [DefaultCF, HeightsCF, TransactionsCF]} ->
+        {ok, DB, [DefaultCF, HeightsCF, TransactionsCF, JsonCF]} ->
             State = #state{
                 db = DB,
                 default = DefaultCF,
                 heights = HeightsCF,
-                transactions = TransactionsCF
+                transactions = TransactionsCF,
+                json = JsonCF
             },
             compact_db(State),
             {ok, State}
     end.
 
-compact_db(#state{db = DB, default = Default, transactions = TransactionsCF}) ->
+compact_db(#state{db = DB, default = Default, transactions = TransactionsCF, json = JsonCF}) ->
     rocksdb:compact_range(DB, Default, undefined, undefined, []),
     rocksdb:compact_range(DB, TransactionsCF, undefined, undefined, []),
+    rocksdb:compact_range(DB, JsonCF, undefined, undefined, []),
     ok.
