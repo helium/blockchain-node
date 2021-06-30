@@ -96,6 +96,26 @@
         "hash"
       ]
     },
+    "pending_transaction": {
+      "type": "object",
+      "description": "Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The tranaction will be absent if status is cleared or failed",
+      "properties": {
+        "txn": {
+          "$ref": "#/definitions/transaction"
+        },
+        "status": {
+          "type": "string",
+          "description": "One of pending, cleared or failed"
+        },
+        "failed_reason": {
+          "type": "string",
+          "description": "Present during failed status"
+        }
+      },
+      "required": [
+        "status"
+      ]
+    },
     "backup_info": {
       "type": "object",
       "properties": {
@@ -234,6 +254,11 @@
             "description": "The current nonce for the account",
             "example": 3
           },
+          "speculative_nonce": {
+            "type": "number",
+            "description": "The larger of the maximum pending balance nonce or the current nonce.",
+            "example": 12
+          },
           "dc_balance": {
             "type": "number",
             "description": "Data credit balance of the account",
@@ -253,16 +278,23 @@
             "type": "number",
             "description": "The current security token nonce for the account",
             "example": 0
+          },
+          "sec_speculative_nonce": {
+            "type": "number",
+            "description": "The larger of the maximum pending security nonce or the current security token nonce for the account",
+            "example": 0
           }
         },
         "required": [
           "address",
           "balance",
+          "speculative_nonce",
           "nonce",
           "dc_balance",
           "dc_nonce",
           "sec_balance",
-          "sec_nonce"
+          "sec_nonce",
+          "sec_speculative_nonce"
         ]
       }
     },
@@ -329,6 +361,35 @@
       "result": {
         "$ref": "#/definitions/oracle_price"
       }
+    },
+    "pending_transaction_get": {
+      "summary": "Get a pending transaction.",
+      "description": "Get the previously submitted transaction with status.",
+      "tags": [
+        "pending transactions"
+      ],
+      "params": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "type": "string",
+            "description": "B64 hash of the pending transaction to fetch",
+            "example": "xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs"
+          }
+        },
+        "required": [
+          "hash"
+        ]
+      },
+      "result": {
+        "$ref": "#/definitions/pending_transaction"
+      },
+      "errors": [
+        {
+          "code": -100,
+          "description": "Pending transaction not found"
+        }
+      ]
     },
     "pending_transaction_status": {
       "summary": "Get pending transaction status.",
@@ -567,6 +628,11 @@
             "type": "integer",
             "description": "Amount in bones to send",
             "example": 1000
+          },
+          "nonce": {
+            "type": "integer",
+            "description": "Nonce to use for transaction",
+            "example": 422
           }
         },
         "required": [
@@ -613,7 +679,12 @@
                 }
               }
             }
-          }
+          },
+          "bones": {
+            "type": "integer",
+            "description": "Amount in bones to send",
+            "example": 1000
+          }  
         },
         "required": [
           "address",
