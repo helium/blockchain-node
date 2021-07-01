@@ -134,7 +134,7 @@ get_transaction_json(Hash, State = #state{db = DB, json = JsonCF}) ->
             case get_transaction(Hash, State) of
                 {ok, {Height, Txn}} ->
                     Json = blockchain_txn:to_json(Txn, []),
-                    Json#{block => Height};
+                    {ok, Json#{block => Height}};
                 Error ->
                     Error
             end;
@@ -152,10 +152,11 @@ save_transactions(Height, Transactions, Ledger, Chain, #state{
     {ok, Batch} = rocksdb:batch(),
     HeightBin = <<Height:64/integer-unsigned-little>>,
     lists:foreach(
-        fun (Txn) ->
+        fun(Txn) ->
             Hash = blockchain_txn:hash(Txn),
             Json =
-                try blockchain_txn:to_json(Txn, [{ledger, Ledger}, {chain, Chain}])
+                try
+                    blockchain_txn:to_json(Txn, [{ledger, Ledger}, {chain, Chain}])
                 catch
                     _:_ ->
                         blockchain_txn:to_json(Txn, [])
@@ -170,7 +171,7 @@ save_transactions(Height, Transactions, Ledger, Chain, #state{
                 Batch,
                 JsonCF,
                 Hash,
-                jsone:encode(Json, [undefined_as_null])
+                jsone:encode(Json#{block => Height}, [undefined_as_null])
             ),
             ok = rocksdb:batch_put(Batch, HeightsCF, Hash, HeightBin)
         end,
