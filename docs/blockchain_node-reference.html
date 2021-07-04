@@ -118,6 +118,9 @@
                 <a class="nav-link" href="#oracle_price_get">oracle_price_get</a>
               </li>
               <li class="nav-item">
+                <a class="nav-link" href="#pending_transaction_get">pending_transaction_get</a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link" href="#pending_transaction_status">pending_transaction_status</a>
               </li>
               <li class="nav-item">
@@ -512,6 +515,12 @@
                           <td>The current nonce for the account</td>
                         </tr>
                         <tr>
+                          <td>result.speculative_nonce</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>The larger of the maximum pending balance nonce or the current nonce.</td>
+                        </tr>
+                        <tr>
                           <td>result.dc_balance</td>
                           <td>number</td>
                           <td></td>
@@ -534,6 +543,12 @@
                           <td>number</td>
                           <td></td>
                           <td>The current security token nonce for the account</td>
+                        </tr>
+                        <tr>
+                          <td>result.sec_speculative_nonce</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>The larger of the maximum pending security nonce or the current security token nonce for the account</td>
                         </tr>
                       </table>
                     </div>
@@ -558,10 +573,12 @@
     "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
     "balance": 1000,
     "nonce": 3,
+    "speculative_nonce": 12,
     "dc_balance": 0,
     "dc_nonce": 0,
     "sec_balance": 0,
-    "sec_nonce": 0
+    "sec_nonce": 0,
+    "sec_speculative_nonce": 0
   }
 }</pre>
                   </div>
@@ -873,6 +890,146 @@
   "result": {
     "price": 131069500,
     "height": 633936
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="pending_transaction_get">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#pending_transaction_get-content"
+            >
+              <h4>
+                <span>pending_transaction_get</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">pending transactions</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="pending_transaction_get-content">
+              <p>Get a pending transaction.</p>
+              
+              <p>Get the previously submitted transaction with status.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 hash of the pending transaction to fetch</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The tranaction will be absent if status is cleared or failed</td>
+                        </tr>
+                        <tr>
+                          <td>result?.txn</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
+                        </tr>
+                        <tr>
+                          <td>result?.txn.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 hash of the transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result?.txn.type</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>The type of the transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result.status</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>One of pending, cleared or failed</td>
+                        </tr>
+                        <tr>
+                          <td>result?.failed_reason</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Present during failed status</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Pending transaction not found</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "pending_transaction_get",
+  "params": {
+    "hash": "xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "txn": {}
   }
 }</pre>
                   </div>
@@ -1729,6 +1886,12 @@
                           <td></td>
                           <td>Amount in bones to send</td>
                         </tr>
+                        <tr>
+                          <td>params?.nonce</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Nonce to use for transaction</td>
+                        </tr>
                       </table>
                     </div>
                     
@@ -1789,7 +1952,8 @@
   "params": {
     "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
     "payee": "13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH",
-    "bones": 1000
+    "bones": 1000,
+    "nonce": 422
   }
 }</pre>
 
@@ -1875,6 +2039,12 @@
                           <td></td>
                           <td>Amount in bones to send</td>
                         </tr>
+                        <tr>
+                          <td>params?.bones</td>
+                          <td>integer</td>
+                          <td></td>
+                          <td>Amount in bones to send</td>
+                        </tr>
                       </table>
                     </div>
                     
@@ -1935,7 +2105,8 @@
   "params": {
     "payments": [
       {}
-    ]
+    ],
+    "bones": 1000
   }
 }</pre>
 

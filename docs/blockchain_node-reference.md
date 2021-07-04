@@ -13,6 +13,7 @@ This api follows the json-rpc 2.0 specification. More information available at h
 - [transaction_get](#transaction_get)
 - [oracle_price_current](#oracle_price_current)
 - [oracle_price_get](#oracle_price_get)
+- [pending_transaction_get](#pending_transaction_get)
 - [pending_transaction_status](#pending_transaction_status)
 - [pending_transaction_submit](#pending_transaction_submit)
 - [wallet_create](#wallet_create)
@@ -179,16 +180,18 @@ Get account details for a given account address.
 
 ### Result
 
-| Name               | Type   | Constraints | Description                                      |
-| ------------------ | ------ | ----------- | ------------------------------------------------ |
-| result             | object |             | Account                                          |
-| result.address     | string |             | Address of the account                           |
-| result.balance     | number |             | HNT balance of the account in bones              |
-| result.nonce       | number |             | The current nonce for the account                |
-| result.dc_balance  | number |             | Data credit balance of the account               |
-| result.dc_nonce    | number |             | The current data credit nonce for the account    |
-| result.sec_balance | number |             | Security token balance of the account            |
-| result.sec_nonce   | number |             | The current security token nonce for the account |
+| Name                         | Type   | Constraints | Description                                                                                          |
+| ---------------------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- |
+| result                       | object |             | Account                                                                                              |
+| result.address               | string |             | Address of the account                                                                               |
+| result.balance               | number |             | HNT balance of the account in bones                                                                  |
+| result.nonce                 | number |             | The current nonce for the account                                                                    |
+| result.speculative_nonce     | number |             | The larger of the maximum pending balance nonce or the current nonce.                                |
+| result.dc_balance            | number |             | Data credit balance of the account                                                                   |
+| result.dc_nonce              | number |             | The current data credit nonce for the account                                                        |
+| result.sec_balance           | number |             | Security token balance of the account                                                                |
+| result.sec_nonce             | number |             | The current security token nonce for the account                                                     |
+| result.sec_speculative_nonce | number |             | The larger of the maximum pending security nonce or the current security token nonce for the account |
 
 ### Examples
 
@@ -213,10 +216,12 @@ Get account details for a given account address.
     "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
     "balance": 1000,
     "nonce": 3,
+    "speculative_nonce": 12,
     "dc_balance": 0,
     "dc_nonce": 0,
     "sec_balance": 0,
-    "sec_nonce": 0
+    "sec_nonce": 0,
+    "sec_speculative_nonce": 0
   }
 }
 ```
@@ -366,6 +371,67 @@ Gets the oracle price at the given height of the blockchain (if known).
   "result": {
     "price": 131069500,
     "height": 633936
+  }
+}
+```
+
+<a name="pending_transaction_get"></a>
+
+## pending_transaction_get
+
+Get a pending transaction.
+
+### Description
+
+Get the previously submitted transaction with status.
+
+### Parameters
+
+| Name        | Type   | Constraints | Description                                  |
+| ----------- | ------ | ----------- | -------------------------------------------- |
+| params      | object |             |                                              |
+| params.hash | string |             | B64 hash of the pending transaction to fetch |
+
+### Result
+
+| Name                  | Type   | Constraints | Description                                                                                                                                                                |
+| --------------------- | ------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| result                | object |             | Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The tranaction will be absent if status is cleared or failed |
+| result?.txn           | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result.                                                                      |
+| result?.txn.hash      | string |             | B64 hash of the transaction                                                                                                                                                |
+| result?.txn.type      | string |             | The type of the transaction                                                                                                                                                |
+| result.status         | string |             | One of pending, cleared or failed                                                                                                                                          |
+| result?.failed_reason | string |             | Present during failed status                                                                                                                                               |
+
+### Errors
+
+| Code | Message | Description                   |
+| ---- | ------- | ----------------------------- |
+| -100 |         | Pending transaction not found |
+
+### Examples
+
+#### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "pending_transaction_get",
+  "params": {
+    "hash": "xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "txn": {}
   }
 }
 ```
@@ -785,6 +851,7 @@ Sends a single payment in bones to a given account address. Note that 1 HNT it 1
 | params.address | string  |             | B58 address of the payer wallet  |
 | params.payee   | string  |             | B58 address of the payee account |
 | params.bones   | integer |             | Amount in bones to send          |
+| params?.nonce  | integer |             | Nonce to use for transaction     |
 
 ### Result
 
@@ -812,7 +879,8 @@ Sends a single payment in bones to a given account address. Note that 1 HNT it 1
   "params": {
     "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
     "payee": "13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH",
-    "bones": 1000
+    "bones": 1000,
+    "nonce": 422
   }
 }
 ```
@@ -847,6 +915,7 @@ Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_0
 | params.payments[]        | object  |             |                                  |
 | params.payments[]?.payee | string  |             | B58 address of the payee account |
 | params.payments[]?.bones | integer |             | Amount in bones to send          |
+| params?.bones            | integer |             | Amount in bones to send          |
 
 ### Result
 
@@ -872,7 +941,8 @@ Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_0
   "id": "1234567890",
   "method": "wallet_pay_multi",
   "params": {
-    "payments": [{}]
+    "payments": [{}],
+    "bones": 1000
   }
 }
 ```
