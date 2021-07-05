@@ -42,7 +42,7 @@ Check [this](https://superuser.com/a/443168) Superuser answer for a workaround.
 
 #### Linux
 
-Update your `/ets/security/limits.d` to increase your file limits. An
+Update your `/etc/security/limits.conf` to increase your file limits. An
 example of what to add can be seen
 [here](https://github.com/helium/blockchain-node/blob/master/.buildkite/config/blockchain_limits.conf).
 
