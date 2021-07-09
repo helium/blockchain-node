@@ -9,3 +9,12 @@
 
 -define (BIN_TO_B64(B), base64url:encode((B))).
 -define (B64_TO_BIN(B), base64url:decode((B))).
+
+-define(TO_KEY(K), bn_jsonrpc_handler:to_key(K)).
+-define(TO_VALUE(V), bn_jsonrpc_handler:to_value(V)).
+-define(B58_TO_ANIMAL(V), iolist_to_binary(element(2, erl_angry_purple_tiger:animal_name(V)))).
+-define(BIN_TO_ANIMAL(V),
+    iolist_to_binary(
+        element(2, erl_angry_purple_tiger:animal_name(?BIN_TO_B58(V)))
+    )
+).

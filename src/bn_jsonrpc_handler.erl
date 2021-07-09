@@ -8,7 +8,9 @@
     jsonrpc_b64_to_bin/2,
     jsonrpc_get_param/2,
     jsonrpc_get_param/3,
-    jsonrpc_error/1
+    jsonrpc_error/1,
+    to_key/1,
+    to_value/1
 ]).
 
 -include("bn_jsonrpc.hrl").
@@ -33,6 +35,10 @@ handle_rpc(<<"block_", _/binary>> = Method, Params) ->
     bn_blocks:handle_rpc(Method, Params);
 handle_rpc(<<"transaction_", _/binary>> = Method, Params) ->
     bn_txns:handle_rpc(Method, Params);
+handle_rpc(<<"implicit_burn_", _/binary>> = Method, Params) ->
+    bn_implicit_burn:handle_rpc(Method, Params);
+handle_rpc(<<"peer_", _/binary>> = Method, Params) ->
+    bn_peer:handle_rpc(Method, Params);
 handle_rpc(<<"pending_transaction_", _/binary>> = Method, Params) ->
     bn_pending_txns:handle_rpc(Method, Params);
 handle_rpc(<<"account_", _/binary>> = Method, Params) ->
@@ -135,3 +141,28 @@ decode_helper(Bin) ->
 
 encode_helper(Json) ->
     jsone:encode(Json, [undefined_as_null]).
+
+to_key(X) when is_atom(X) -> atom_to_binary(X, utf8);
+to_key(X) when is_list(X) -> iolist_to_binary(X);
+to_key(X) when is_binary(X) -> X.
+
+%% don't want these atoms stringified
+to_value(true) -> true;
+to_value(false) -> false;
+to_value(undefined) -> null;
+%% lightly format floats, but pass through integers as-is
+to_value(X) when is_float(X) -> float_to_binary(blockchain_utils:normalize_float(X), [{decimals, 3}, compact]);
+to_value(X) when is_integer(X) -> X;
+%% make sure we have valid representations of other types which may show up in values
+to_value(X) when is_list(X) -> iolist_to_binary(X);
+to_value(X) when is_atom(X) -> atom_to_binary(X, utf8);
+to_value(X) when is_binary(X) -> X;
+to_value(X) when is_map(X) -> ensure_binary_map(X);
+to_value(X) -> iolist_to_binary(io_lib:format("~p", [X])).
+
+ensure_binary_map(M) ->
+    maps:fold(fun(K, V, Acc) ->
+                        BinK = to_key(K),
+                        BinV = to_value(V),
+                        Acc#{BinK => BinV}
+                end, #{}, M).
