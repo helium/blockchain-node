@@ -16,7 +16,6 @@ handle_rpc(_, _) ->
 %%
 %% Internal
 %%
-
 peer_book_response(self) ->
     TID = blockchain_swarm:tid(),
     Peerbook = libp2p_swarm:peerbook(TID),
