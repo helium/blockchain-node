@@ -343,13 +343,25 @@
                           <td>result.transactions</td>
                           <td>array</td>
                           <td></td>
-                          <td>Block transaction hashes</td>
+                          <td>Block transaction descriptions</td>
                         </tr>
                         <tr>
                           <td>result.transactions[]</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Transaction hash</td>
+                        </tr>
+                        <tr>
+                          <td>result.transactions[]?.hash</td>
                           <td>string</td>
                           <td></td>
                           <td>Transaction hash</td>
+                        </tr>
+                        <tr>
+                          <td>result.transactions[]?.type</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Transaction type</td>
                         </tr>
                       </table>
                     </div>
@@ -403,26 +415,34 @@
     "prev_hash": "OLv5ah-94zg3ySJK5x50-W6Kw4gd510ikhpbByq37ZU",
     "time": 1588558709,
     "transactions": [
-      "wexZNzv5nlLI9riuN8WDaBS8yxhGwfFBYK4MVSGDHis",
-      "nBifAlkm6d6b2kPclJbKI8T4rjefgwhsZxKPUHXFJSM",
-      "k_ZS64CexnpvYfwQLjNytKBHrGrZMe8hI_lHpyD6Tx0",
-      "ER_N9N58gsIkPubq0tSlrWZUtdD1ij8TsEqMZDGQuSI",
-      "bsnMBjroAfiuyQe1lI24zGTeqtIKKBDPbqlLokgxQg8",
-      "39Sj-bprwSiI28DMFZid0pXsTqEvS-tTZa6zMyyE_ig",
-      "sqMRtZLeBFgOpvB_tOOa2H1UVXNFJc-9K8qYfdJMRME",
-      "gPbkpNBhuQrZAbLjkkeUlVBjXMHTWk5AJn0GEK8GRgE",
-      "pnDJ1K5ydeABq3Zy1xV_ey0TF3FouDScqKk1lPqnUsU",
-      "Y3sNXBPfmt1SRPhXbG3mK9W2kEAvnFWBLb77ATADmv0",
-      "utKCgooy2wb6EK6n8S-hln16ugZhwnUdfRUWv6MOBGE",
-      "-Zj-qfR1VB0NyIUavkZgr5qzPDxkIxIM1WZdvs1hkRk",
-      "-BpXPSMylHwUbU3FtHzxMD_X5smuHqSi-d3DB0vllmQ",
-      "t6BWSO0nIvIO_wpiJOjCMd7hO3rIWSapF-p6IybQAjg",
-      "yCFtd4m34B8PNHOsFH708bPHKW9JuWe3iFoChkgpLdw",
-      "yrbiQ4uPQQYjBJN5YOc73CkBWx3Y9354sHymKqwWJUA",
-      "TsGVx5z8Ozk0jHGfBS0heK8tBpcHjSgyzvD4rkCbnKk",
-      "NrS5Q4RCIuECKt0cb3mrnPdLQtrS9hSQudiZAl5ZObI",
-      "4lsxf5RUK66CrLcG8CqCUNUq5V5onvz11FZPHR2QLzI",
-      "Mw080p4DaYLW0xhRJh4fvnfDfJ7I1Iz4idqUtTZwdu4"
+      {
+        "hash": "UOVRPuEO2IE8y9fxiuO9JBcBLrqP0Hbh7cUqt-n_8QE",
+        "type": "poc_request_v1"
+      },
+      {
+        "hash": "67NdSWYjdE8LaR0DE_NNWqMr4XVK8hwrFJ616c9BPmE",
+        "type": "poc_request_v1"
+      },
+      {
+        "hash": "KfHpj8ytLV6bqNaMS8wbWXeqXkHxjS-G_U_AAUrFvSQ",
+        "type": "poc_request_v1"
+      },
+      {
+        "hash": "r4mgtbBnrY0v6_m01-akrUtZ7KSsLIF4XTJBIUWiaZs",
+        "type": "poc_request_v1"
+      },
+      {
+        "hash": "KMFPXYw9QYdW3mtciOuitcWm1qVknm5IDluckN7IcaY",
+        "type": "poc_request_v1"
+      },
+      {
+        "hash": "1cpS1AnemprqCmm8SHq9_S-eiCE6zjzf2QsOIaV4GgI",
+        "type": "poc_request_v1"
+      },
+      {
+        "hash": "1Rh4iR3eBQIIywqSQ0TCO04tdl2Dl7dW4qWng5q65Es",
+        "type": "poc_request_v1"
+      }
     ]
   }
 }</pre>
