@@ -127,14 +127,26 @@ get_transaction(Hash, #state{db = DB, heights = HeightsCF, transactions = Transa
 -spec get_transaction_json(Hash :: binary(), #state{}) ->
     {ok, blockchain_json:json_object()} | {error, term()}.
 get_transaction_json(Hash, State = #state{db = DB, json = JsonCF}) ->
+    Chain = blockchain_worker:blockchain(),
     case rocksdb:get(DB, JsonCF, Hash, []) of
         {ok, BinJson} ->
-            {ok, jsone:decode(BinJson, [])};
+            Json = jsone:decode(BinJson, []),
+            case blockchain:get_implicit_burn(Hash, Chain) of
+                {ok, ImplicitBurn} ->
+                    {ok, Json#{implicit_burn => blockchain_implicit_burn:to_json(ImplicitBurn, [])}};
+                {error, _} ->
+                    {ok, Json}
+            end;
         not_found ->
             case get_transaction(Hash, State) of
                 {ok, {Height, Txn}} ->
                     Json = blockchain_txn:to_json(Txn, []),
-                    {ok, Json#{block => Height}};
+                    case blockchain:get_implicit_burn(Hash, Chain) of
+                        {ok, ImplicitBurn} ->
+                            {ok, Json#{block => Height, implicit_burn => blockchain_implicit_burn:to_json(ImplicitBurn, [])}};
+                        {error, _} ->
+                            {ok, Json#{block => Height}}
+                    end;
                 Error ->
                     Error
             end;
