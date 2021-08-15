@@ -60,7 +60,7 @@ docker-clean: docker-stop
 docker-start:
 	mkdir -p $(HOME)/node_data
 	docker run -d --init \
-	--publish 2154:2154/tcp \
+	--publish 44158:44158/tcp \
 	--publish 4467:4467 \
 	--name node \
 	--mount type=bind,source=$(HOME)/node_data,target=/var/data \
