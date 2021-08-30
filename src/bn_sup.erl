@@ -3,7 +3,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/0, random_val_predicate/1]).
 %% Supervisor callbacks
 -export([init/1]).
 
@@ -49,23 +49,21 @@ init([]) ->
     {PublicKey, ECDHFun, SigFun} =
         case libp2p_crypto:load_keys(SwarmKey) of
             {ok, #{secret := PrivKey0, public := PubKey}} ->
-                {PubKey, libp2p_crypto:mk_ecdh_fun(PrivKey0),
-                    libp2p_crypto:mk_sig_fun(PrivKey0)};
+                {PubKey, libp2p_crypto:mk_ecdh_fun(PrivKey0), libp2p_crypto:mk_sig_fun(PrivKey0)};
             {error, enoent} ->
                 KeyMap =
                     #{secret := PrivKey0, public := PubKey} = libp2p_crypto:generate_keys(
                         ecc_compact
                     ),
                 ok = libp2p_crypto:save_keys(KeyMap, SwarmKey),
-                {PubKey, libp2p_crypto:mk_ecdh_fun(PrivKey0),
-                    libp2p_crypto:mk_sig_fun(PrivKey0)}
+                {PubKey, libp2p_crypto:mk_ecdh_fun(PrivKey0), libp2p_crypto:mk_sig_fun(PrivKey0)}
         end,
     SeedNodeDNS = application:get_env(blockchain, seed_node_dns, []),
     SeedAddresses = string:tokens(
         lists:flatten([
             string:prefix(X, "blockchain-seed-nodes=")
-            || [X] <- inet_res:lookup(SeedNodeDNS, in, txt),
-               string:prefix(X, "blockchain-seed-nodes=") /= nomatch
+         || [X] <- inet_res:lookup(SeedNodeDNS, in, txt),
+            string:prefix(X, "blockchain-seed-nodes=") /= nomatch
         ]),
         ","
     ),
@@ -97,3 +95,7 @@ init([]) ->
             ?WORKER(bn_wallets, [[{base_dir, BaseDir}]]),
             ?WORKER(elli, [[{callback, bn_jsonrpc_handler}, {port, NodePort}]])
         ]}}.
+
+random_val_predicate(Peer) ->
+    not libp2p_peer:is_stale(Peer, timer:minutes(360)) andalso
+        maps:get(<<"release_version">>, libp2p_peer:signed_metadata(Peer), undefined) /= undefined.
