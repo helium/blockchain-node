@@ -17,37 +17,16 @@ handle_rpc(_, _) ->
 %% Internal
 %%
 
-peer_book_response(Target) ->
+peer_book_response(self) ->
     TID = blockchain_swarm:tid(),
     Peerbook = libp2p_swarm:peerbook(TID),
 
-    %% Always return a list here, even when there's just
-    %% a single entry
-    case Target of
-        all ->
-            [ format_peer(P) || P <- libp2p_peerbook:values(Peerbook) ];
-        self ->
-            {ok, Peer} = libp2p_peerbook:get(Peerbook, blockchain_swarm:pubkey_bin()),
-            [ lists:foldl(fun(M, Acc) -> maps:merge(Acc, M) end,
-                        format_peer(Peer),
-                        [format_listen_addrs(TID, libp2p_peer:listen_addrs(Peer)),
-                         format_peer_sessions(TID)]
-                       ) ];
-        Addrs when is_list(Addrs) ->
-            [begin
-                 {ok, P} = libp2p_peerbook:get(Peerbook, A),
-                 lists:foldl(fun(M, Acc) -> maps:merge(Acc, M) end,
-                             format_peer(P),
-                             [format_listen_addrs(TID, libp2p_peer:listen_addrs(P)),
-                              format_peer_connections(P)])
-             end || A <- Addrs ];
-        Addr ->
-            {ok, P} = libp2p_peerbook:get(Peerbook, Addr),
-            [ lists:foldl(fun(M, Acc) -> maps:merge(Acc, M) end,
-                          format_peer(P),
-                          [format_listen_addrs(TID, libp2p_peer:listen_addrs(P)),
-                          format_peer_connections(P)]) ]
-    end.
+    {ok, Peer} = libp2p_peerbook:get(Peerbook, blockchain_swarm:pubkey_bin()),
+    [ lists:foldl(fun(M, Acc) -> maps:merge(Acc, M) end,
+                format_peer(Peer),
+                [format_listen_addrs(TID, libp2p_peer:listen_addrs(Peer)),
+                    format_peer_sessions(TID)]
+                ) ].
 
 format_peer(Peer) ->
     ListenAddrs = libp2p_peer:listen_addrs(Peer),
@@ -64,14 +43,6 @@ format_peer(Peer) ->
         <<"last_updated">> => (erlang:system_time(millisecond) - Timestamp) / 1000
     },
     maps:map(fun(_K, V) -> ?TO_VALUE(V) end, M).
-
-format_peer_connections(Peer) ->
-    #{
-        <<"connections">> => [
-            ?TO_VALUE(libp2p_crypto:pubkey_bin_to_p2p(P))
-         || P <- libp2p_peer:connected_peers(Peer)
-        ]
-    }.
 
 format_listen_addrs(TID, Addrs) ->
     libp2p_transport:sort_addrs(TID, Addrs),
