@@ -54,8 +54,22 @@ follower_height(#state{db = DB, default = DefaultCF}) ->
         {error, _} = Error -> ?jsonrpc_error(Error)
     end.
 
-load_chain(_Chain, State = #state{}) ->
-    {ok, State}.
+load_chain(_Chain, State0 = #state{}) ->
+    maybe_load_genesis(State0).
+
+maybe_load_genesis(State0 = #state{}) ->
+    case blockchain:get_block(1, blockchain_worker:blockchain()) of
+        {ok, Block} ->
+            Hash = blockchain_txn:hash(lists:last(blockchain_block:transactions(Block))),
+            case get_transaction(Hash, State0) of
+                {ok, _} -> % already loaded
+                    {ok, State0};
+                _ -> % attempt to load
+                    load_block([], Block, [], [], State0)
+            end;
+        Error ->
+            Error
+    end.
 
 load_block(_Hash, Block, _Sync, _Ledger, State = #state{}) ->
     BlockHeight = blockchain_block_v1:height(Block),
