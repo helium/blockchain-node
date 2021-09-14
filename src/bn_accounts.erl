@@ -14,8 +14,14 @@
 %%
 
 handle_rpc(<<"account_get">>, {Param}) ->
+    Chain = blockchain_worker:blockchain(),
+    case ?jsonrpc_get_param(<<"height">>, Param, false) of
+        false ->
+            Ledger = blockchain:ledger(Chain);
+        Height ->
+            Ledger = blockchain:ledger_at(Height, Chain)
+    end,
     Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
-    Ledger = blockchain:ledger(blockchain_worker:blockchain()),
     GetBalance = fun() ->
         case blockchain_ledger_v1:find_entry(Address, Ledger) of
             {ok, Entry} ->
@@ -76,6 +82,7 @@ handle_rpc(<<"account_get">>, {Param}) ->
         },
         [GetBalance, GetSecurities, GetDCs]
     );
+
 handle_rpc(_, _) ->
     ?jsonrpc_error(method_not_found).
 
