@@ -55,7 +55,7 @@ follower_height(#state{db = DB, default = DefaultCF}) ->
     end.
 
 load_chain(Chain, State = #state{}) ->
-    maybe_load_genesis(State).
+    maybe_load_genesis(Chain, State).
 
 maybe_load_genesis(Chain, State = #state{}) ->
     case blockchain:get_block(1, Chain) of
