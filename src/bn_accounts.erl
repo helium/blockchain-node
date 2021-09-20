@@ -15,25 +15,23 @@
 
 handle_rpc(<<"account_get">>, {Param}) ->
     Chain = blockchain_worker:blockchain(),
-    Height = case ?jsonrpc_get_param(<<"height">>, Param, false) of
-        false ->            
-            bn_txns:follower_height();
-        HeightParam ->
-            HeightParam
-    end,
-    Ledger = case Height == bn_txns:follower_height() of
-        true ->
-            blockchain:ledger(Chain);
-        false ->
-            case blockchain:ledger_at(Height, Chain) of
-                {ok, OldLedger} ->
-                    OldLedger;
-                {error, height_too_old} ->
-                    ?jsonrpc_error({error, "height ~p is too old to get historic account data", [Height]});
-                {error, _}=Error ->
-                    ?jsonrpc_error(Error)
-            end
-    end,
+    {Height, Ledger} =
+        case ?jsonrpc_get_param(<<"height">>, Param, false) of
+            false ->
+                {bn_txns:follower_height(), blockchain:ledger(Chain)};
+            V ->
+                case blockchain:ledger_at(V, Chain) of
+                    {ok, OldLedger} ->
+                        {V, OldLedger};
+                    {error, height_too_old} ->
+                        {V,
+                            ?jsonrpc_error(
+                                {error, "height ~p is too old to get historic account data", [V]}
+                            )};
+                    {error, _} = Error ->
+                        {V, ?jsonrpc_error(Error)}
+                end
+        end,
     Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     GetBalance = fun() ->
         case blockchain_ledger_v1:find_entry(Address, Ledger) of
@@ -95,7 +93,6 @@ handle_rpc(<<"account_get">>, {Param}) ->
         },
         [GetBalance, GetSecurities, GetDCs]
     );
-
 handle_rpc(_, _) ->
     ?jsonrpc_error(method_not_found).
 
