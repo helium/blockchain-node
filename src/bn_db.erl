@@ -1,12 +1,16 @@
 -module(bn_db).
 
--export([open_db/2, clean_db/1]).
+-export([open_db/2, open_db/3, clean_db/1]).
 -export([get_state/1]).
 -export([get_follower_height/2, put_follower_height/3, batch_put_follower_height/3]).
 
 -spec open_db(Dir :: file:filename_all(), CFNames :: [string()]) ->
     {ok, rocksdb:db_handle(), [rocksdb:cf_handle()]} | {error, any()}.
 open_db(Dir, CFNames) ->
+    open_db(Dir, CFNames, []).
+-spec open_db(Dir :: file:filename_all(), CFNames :: [string()], AdditionalCFOpts :: [term()]) ->
+    {ok, rocksdb:db_handle(), [rocksdb:cf_handle()]} | {error, any()}.
+open_db(Dir, CFNames, AdditionalCFOpts) ->
     ok = filelib:ensure_dir(Dir),
     GlobalOpts = application:get_env(rocksdb, global_opts, []),
     DBOptions = [{create_if_missing, true}, {atomic_flush, true}] ++ GlobalOpts,
@@ -18,7 +22,7 @@ open_db(Dir, CFNames) ->
                 ["default"]
         end,
 
-    CFOpts = GlobalOpts,
+    CFOpts = GlobalOpts ++ AdditionalCFOpts,
     case rocksdb:open_with_cf(Dir, DBOptions, [{CF, CFOpts} || CF <- ExistingCFs]) of
         {error, _Reason} = Error ->
             Error;

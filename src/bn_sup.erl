@@ -92,6 +92,9 @@ init([]) ->
             ?WORKER(oracle_price_follower, blockchain_follower, [
                 [{follower_module, {bn_oracle_price, [{base_dir, BaseDir}]}}]
             ]),
+            ?WORKER(balances_follower, blockchain_follower, [
+                [{follower_module, {bn_balances, [{base_dir, BaseDir}]}}]
+            ]),
             ?WORKER(bn_wallets, [[{base_dir, BaseDir}]]),
             ?WORKER(elli, [[{callback, bn_jsonrpc_handler}, {port, NodePort}]])
         ]}}.
