@@ -2,12 +2,21 @@
 
 set -euo pipefail
 
-fpm -n $(basename $(pwd)) \
-    -v $(git describe --long --always) \
+VERSION=$( git describe --abbrev=0 --tags )
+
+DIAGNOSTIC=1 ./rebar3 as $1 release -v ${VERSION} -n blockchain_node
+
+fpm -n blockchain-node \
+    -v ${VERSION} \
     -s dir \
     -t deb \
     --depends libssl1.1 \
     --depends libsodium23 \
+    --depends libc6 \
+    --depends libncurses5 \
+    --depends libgcc1 \
+    --depends libstdc++6 \
+    --depends libsctp1 \
     --deb-systemd deb/blockchain-node.service \
     --deb-no-default-config-files \
-    _build/prod/rel/=/var/helium
+    _build/$1/rel/=/var/helium
