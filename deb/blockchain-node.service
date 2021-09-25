@@ -1,0 +1,19 @@
+[Unit]
+Description=blockchain-node instance
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/var/helium/blockchain_node/bin/blockchain_node foreground
+ExecStop=/var/helium/blockchain_node/bin/blockchain_node stop
+User=ubuntu
+PIDFile=/var/data/blockchain_node/blockchain_node.pid
+Environment=HOME="/var/data/blockchain_node"
+Environment=RUNNER_LOG_DIR="/var/data/log/blockchain_node"
+Environment=ERL_CRASH_DUMP="/var/data/log/blockchain_node"
+LimitNOFILE=64000
+LimitNPROC=64000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
