@@ -1,0 +1,63 @@
+ARG BUILDER_IMAGE
+ARG RUNNER_IMAGE
+
+FROM ${BUILDER_IMAGE} as builder
+
+ARG VERSION
+ARG BUILD_TARGET=docker_rosetta
+
+RUN set -xe \
+	    && apt update \
+	    && apt-get install -y --no-install-recommends \
+     	        libssl-dev make automake autoconf libncurses5-dev gcc \
+	        libdbus-1-dev libbz2-dev bison flex libgmp-dev liblz4-dev \
+	        libsodium-dev sed wget curl build-essential libtool git \
+		ca-certificates \
+	    && mkdir -p /opt/cmake \
+	    && wget -O /opt/cmake/cmake.tgz \
+	        https://github.com/Kitware/CMake/releases/download/v3.21.3/cmake-3.21.3-linux-x86_64.tar.gz \
+            && tar -zxf /opt/cmake/cmake.tgz -C /opt/cmake --strip-components=1
+
+# Install Rust toolchain
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+WORKDIR /usr/src/node
+
+ENV CC=gcc CXX=g++ CFLAGS="-U__sun__" \
+    ERLANG_ROCKSDB_OPTS="-DWITH_BUNDLE_SNAPPY=ON -DWITH_BUNDLE_LZ4=ON" \
+    ERL_COMPILER_OPTIONS="[deterministic]" \
+    PATH="/root/.cargo/bin:/opt/cmake/bin:$PATH" \
+    RUSTFLAGS="-C target-feature=-crt-static"
+
+# Add our code
+ADD . /usr/src/node/
+
+RUN ./rebar3 as ${BUILD_TARGET} tar -v ${VERSION} -n blockchain_node
+
+RUN mkdir -p /opt/docker \
+	&& tar -zxvf _build/${REBAR_TARGET}/rel/*/*.tar.gz -C /opt/docker
+
+FROM ${RUNNER_IMAGE} as runner
+
+ARG VERSION
+
+RUN set -xe \
+	&& ulimit -n 100000 \
+        && apt update \
+ 	&& apt install -y --no-install-recommends libdbus-1-3 libgmp10 libsodium23 \
+	&& rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/blockchain_node
+
+ENV COOKIE=blockchain_node \
+    # Write files generated during startup to /tmp
+    RELX_OUT_FILE_PATH=/tmp \
+    # add to path, for easy exec interaction
+    PATH=/sbin:/bin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$PATH:/opt/blockchain_node/bin
+
+COPY --from=builder /opt/docker /opt/blockchain_node
+
+RUN ln -sf /config /opt/blockchain_node/releases/${VERSION}
+
+ENTRYPOINT ["/opt/blockchain_node/bin/blockchain_node"]
+CMD ["foreground"]
