@@ -7,34 +7,57 @@ steps:
     agents:
       queue: "erlang"
 
-  - label: ":debian: build deb"
+  - if: build.tag =~ /^otp/
+    name: "build otp ubuntu"
     commands:
       - "git fetch -t"
-      - "make release -e PROFILE=prod"
-      - ".buildkite/scripts/make_deb.sh"
-    key: "deb"
-    artifact_paths: "*.deb"
-    if: build.tag != null
-    depends_on: "tests"
+      - ".buildkite/scripts/ubuntu_otp_image.sh"
     agents:
       queue: "erlang"
 
-  - label: "upload"
+  - if: build.tag != null && build.tag !~ /^otp/
+    label: ":debian: build deb"
+    commands:
+      - "git fetch -t"
+      - ".buildkite/scripts/make_deb.sh prod"
+    key: "deb"
+    artifact_paths: "*.deb"
+    agents:
+      queue: "erlang"
+
+  - if: build.tag != null && build.tag !~ /^otp/
+    label: "upload"
     name: ":cloud: upload to packagecloud"
     commands:
       - "git fetch -t"
       - ".buildkite/scripts/packagecloud_upload.sh"
-    if: build.tag != null
     depends_on: "deb"
     agents:
       queue: "erlang"
 
-  - label: "docker"
-    name: ":whale: build docker"
+  - if: build.tag != null && build.tag !~ /^otp/
+    label: "prod docker"
+    name: ":whale: build docker prod image"
     commands:
       - "git fetch -t"
-      - ".buildkite/scripts/make_docker.sh"
-    if: build.tag != null
-    depends_on: "deb"
+      - ".buildkite/scripts/make_docker.sh docker_node"
+    agents:
+      queue: "erlang"
+
+  - if: build.tag != null && build.tag !~ /^otp/
+    label: "docker"
+    name: ":whale: build rosetta docker image"
+    commands:
+      - "git fetch -t"
+      - ".buildkite/scripts/make_docker.sh docker_rosetta"
+    agents:
+      queue: "erlang"
+
+  - if: build.tag != null && build.tag !~ /^otp/
+    label: "docker"
+    name: ":whale: build rosetta testnet docker image"
+    commands:
+      - "git fetch -t"
+      - ".buildkite/scripts/make_docker.sh docker_rosetta_testnet"
     agents:
       queue: "erlang"

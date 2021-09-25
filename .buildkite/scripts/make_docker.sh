@@ -2,19 +2,41 @@
 
 set -euo pipefail
 
-DEV_ECS_REGISTRY_NAME="217417705465.dkr.ecr.us-west-2.amazonaws.com/dev-deploy"
-PROD_ECS_REGISTRY_NAME="350169207474.dkr.ecr.us-west-2.amazonaws.com/prod-deploy"
-DEB_PKG="$(basename $(pwd))_$(git describe --long --always)_amd64.deb"
-DOCKER_NAME="$(basename $(pwd))_${BUILDKITE_TAG}"
+REGISTRY_HOST="quay.io/team-helium/blockchain-node"
+UBUNTU_BUILDER="quay.io/team-helium/build-images:ubuntu18-23.3.4.8"
+UBUNTU_RUNNER="quay.io/team-helium/build-images:ubuntu18-23.3.4.8"
+ALPINE_IMAGE="23.3.4.8-alpine"
 
-buildkite-agent artifact download $DEB_PKG .
+BUILD_TARGET=$1
+VERSION=$( git describe --abbrev=0 )
+DOCKER_BUILD_ARGS="--build-arg VERSION=$VERSION --build-arg BUILD_TARGET=$BUILD_TARGET"
 
-docker build -t helium:$DOCKER_NAME -f .buildkite/Dockerfile .
-docker tag helium:$DOCKER_NAME "$DEV_ECS_REGISTRY_NAME:$DOCKER_NAME"
-docker tag helium:$DOCKER_NAME "$PROD_ECS_REGISTRY_NAME:$DOCKER_NAME"
+case "$BUILD_TARGET" in
+    "docker_node")
+        echo "Building docker node"
+        DOCKER_BUILD_ARGS="--build-arg BUILDER_IMAGE=$ALPINE_IMAGE --build-arg RUNNER_IMAGE=$ALPINE_IMAGE $DOCKER_BUILD_ARGS"
+        DOCKER_NAME="blockchain-node-alpine-$VERSION"
+        DOCKERFILE="./Dockerfile"
+        ;;
+    "rosetta_docker")
+        echo "Building rosetta docker"
+        DOCKER_BUILD_ARGS="--build-arg BUILDER_IMAGE=$UBUNTU_BUILDER --build-arg RUNNER_IMAGE=$UBUNTU_RUNNER $DOCKER_BUILD_ARGS"
+        DOCKER_NAME="blockchain-node-ubuntu18-$VERSION"
+        DOCKERFILE=".buildkite/Dockerfile-ubuntu"
+        ;;
+    "rosetta_testnet_docker")
+        echo "Building rosetta testnet docker"
+        DOCKER_BUILD_ARGS="--build-arg BUILDER_IMAGE=$UBUNTU_BUILDER --build-arg RUNNER_IMAGE=$UBUNTU_RUNNER $DOCKER_BUILD_ARGS"
+        DOCKER_NAME="blockchain-node-testnet-ubuntu18-$VERSION"
+        DOCKERFILE=".buildkite/Dockerfile-ubuntu"
+        ;;
+    *)
+        echo "I don't know how to build $BUILD_TARGET"
+        exit 1
+        ;;
+esac
 
-aws ecr get-login-password | docker login --username AWS --password-stdin 217417705465.dkr.ecr.us-west-2.amazonaws.com
-docker push "$DEV_ECS_REGISTRY_NAME:$DOCKER_NAME"
-
-aws ecr get-login-password | docker login --username AWS --password-stdin 350169207474.dkr.ecr.us-west-2.amazonaws.com
-docker push "$PROD_ECS_REGISTRY_NAME:$DOCKER_NAME"
+docker build $DOCKER_BUILD_ARGS -t "helium:${DOCKER_NAME}" -f "$DOCKERFILE" .
+docker tag "helium:$DOCKER_NAME" "$REGISTRY_HOST:$DOCKER_NAME"
+docker login -u="team-helium+buildkite" -p="${QUAY_BUILDKITE_PASSWORD}" quay.io
+docker push "$REGISTRY_HOST:$DOCKER_NAME"
