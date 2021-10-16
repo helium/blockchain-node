@@ -16,6 +16,8 @@ This api follows the json-rpc 2.0 specification. More information available at h
 - [pending_transaction_get](#pending_transaction_get)
 - [pending_transaction_status](#pending_transaction_status)
 - [pending_transaction_submit](#pending_transaction_submit)
+- [implicit_burn_get](#implicit_burn_get)
+- [htlc_get](#htlc_get)
 - [wallet_create](#wallet_create)
 - [wallet_delete](#wallet_delete)
 - [wallet_list](#wallet_list)
@@ -255,11 +257,14 @@ Get details for a given transaction hash.
 
 ### Result
 
-| Name        | Type   | Constraints | Description                                                                                           |
-| ----------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
-| result      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
-| result.hash | string |             | B64 hash of the transaction                                                                           |
-| result.type | string |             | The type of the transaction                                                                           |
+| Name                        | Type   | Constraints | Description                                                                                           |
+| --------------------------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
+| result                      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
+| result.hash                 | string |             | B64 hash of the transaction                                                                           |
+| result.type                 | string |             | The type of the transaction                                                                           |
+| result?.implicit_burn       | object |             | Implicit burn details                                                                                 |
+| result?.implicit_burn.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction                          |
+| result?.implicit_burn.payer | string |             | Address of the account that paid the fee                                                              |
 
 ### Errors
 
@@ -287,7 +292,12 @@ Get details for a given transaction hash.
 {
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
 }
 ```
 
@@ -404,14 +414,17 @@ Get the previously submitted transaction with status.
 
 ### Result
 
-| Name                  | Type   | Constraints | Description                                                                                                                                                                |
-| --------------------- | ------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| result                | object |             | Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The tranaction will be absent if status is cleared or failed |
-| result?.txn           | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result.                                                                      |
-| result?.txn.hash      | string |             | B64 hash of the transaction                                                                                                                                                |
-| result?.txn.type      | string |             | The type of the transaction                                                                                                                                                |
-| result.status         | string |             | One of pending, cleared or failed                                                                                                                                          |
-| result?.failed_reason | string |             | Present during failed status                                                                                                                                               |
+| Name                             | Type   | Constraints | Description                                                                                                                                                                |
+| -------------------------------- | ------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| result                           | object |             | Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The tranaction will be absent if status is cleared or failed |
+| result?.txn                      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result.                                                                      |
+| result?.txn.hash                 | string |             | B64 hash of the transaction                                                                                                                                                |
+| result?.txn.type                 | string |             | The type of the transaction                                                                                                                                                |
+| result?.txn?.implicit_burn       | object |             | Implicit burn details                                                                                                                                                      |
+| result?.txn?.implicit_burn.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction                                                                                               |
+| result?.txn?.implicit_burn.payer | string |             | Address of the account that paid the fee                                                                                                                                   |
+| result.status                    | string |             | One of pending, cleared or failed                                                                                                                                          |
+| result?.failed_reason            | string |             | Present during failed status                                                                                                                                               |
 
 ### Errors
 
@@ -441,7 +454,12 @@ Get the previously submitted transaction with status.
   "jsonrpc": "2.0",
   "id": "1234567890",
   "result": {
-    "txn": {}
+    "txn": {
+      "implicit_burn": {
+        "fee": 1401125,
+        "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+      }
+    }
   }
 }
 ```
@@ -519,11 +537,14 @@ Submits a pending transaction to the pending queue. The transactions needs to be
 
 ### Result
 
-| Name        | Type   | Constraints | Description                                                                                           |
-| ----------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
-| result      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
-| result.hash | string |             | B64 hash of the transaction                                                                           |
-| result.type | string |             | The type of the transaction                                                                           |
+| Name                        | Type   | Constraints | Description                                                                                           |
+| --------------------------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
+| result                      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
+| result.hash                 | string |             | B64 hash of the transaction                                                                           |
+| result.type                 | string |             | The type of the transaction                                                                           |
+| result?.implicit_burn       | object |             | Implicit burn details                                                                                 |
+| result?.implicit_burn.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction                          |
+| result?.implicit_burn.payer | string |             | Address of the account that paid the fee                                                              |
 
 ### Errors
 
@@ -552,7 +573,140 @@ Submits a pending transaction to the pending queue. The transactions needs to be
 {
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
+}
+```
+
+<a name="implicit_burn_get"></a>
+
+## implicit_burn_get
+
+Gets an implicit burn for a transaction hash.
+
+### Description
+
+Gets an implicit burn for a transaction hash. Returns amount of HNT burned for a DC fee.
+
+### Parameters
+
+| Name        | Type   | Constraints | Description                                |
+| ----------- | ------ | ----------- | ------------------------------------------ |
+| params      | object |             |                                            |
+| params.hash | string |             | Transaction hash to get implicit burn for. |
+
+### Result
+
+| Name         | Type   | Constraints | Description                                                                  |
+| ------------ | ------ | ----------- | ---------------------------------------------------------------------------- |
+| result       | object |             | Implicit burn details                                                        |
+| result.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction |
+| result.payer | string |             | Address of the account that paid the fee                                     |
+
+### Errors
+
+| Code | Message | Description                             |
+| ---- | ------- | --------------------------------------- |
+| -100 |         | Implicit burn not found for transaction |
+
+### Examples
+
+#### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "implicit_burn_get",
+  "params": {
+    "hash": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "fee": 1401125,
+    "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+  }
+}
+```
+
+<a name="htlc_get"></a>
+
+## htlc_get
+
+Gets HTLC details for an HTLC address.
+
+### Description
+
+Gets HTLC details for an HTLC address. If an HTLC was redeemed, it will also show the redemption height.
+
+### Parameters
+
+| Name           | Type   | Constraints | Description  |
+| -------------- | ------ | ----------- | ------------ |
+| params         | object |             |              |
+| params.address | string |             | HTLC address |
+
+### Result
+
+| Name                | Type   | Constraints | Description                                                 |
+| ------------------- | ------ | ----------- | ----------------------------------------------------------- |
+| result              | object |             | HTLC details                                                |
+| result.address      | string |             | B58 address of the HTLC                                     |
+| result.balance      | number |             | Amount of HNT locked                                        |
+| result.hashlock     | string |             | Hash to unlock HTLC                                         |
+| result.payee        | string |             | Address of the payee                                        |
+| result.payer        | string |             | Address of the payer                                        |
+| result?.redeemed_at | number |             | Block height at which HTLC was redeemed                     |
+| result.timelock     | number |             | Number of blocks HTLC is locked for until payer can reclaim |
+
+### Errors
+
+| Code | Message | Description    |
+| ---- | ------- | -------------- |
+| -100 |         | HTLC not found |
+
+### Examples
+
+#### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "htlc_get",
+  "params": {
+    "address": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "address": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9",
+    "balance": 10,
+    "hashlock": "AQEFmiouhIzFHBeCyW4J3sBKvBD3m2yuktTxUf14cIo",
+    "payee": "14zemQxLLimdTkHnpBU8f6o3DMmU9QfrreqsR1rYUF4tLveyc62",
+    "payer": "13udMhCkD4RmVCKKtprt96UAEBMppT55fs1z9viS6Uha8EWSWGe",
+    "redeemed_at": 930213,
+    "timelock": 100
+  }
 }
 ```
 
@@ -865,11 +1019,14 @@ Sends a single payment in bones to a given account address. Note that 1 HNT it 1
 
 ### Result
 
-| Name        | Type   | Constraints | Description                                                                                           |
-| ----------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
-| result      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
-| result.hash | string |             | B64 hash of the transaction                                                                           |
-| result.type | string |             | The type of the transaction                                                                           |
+| Name                        | Type   | Constraints | Description                                                                                           |
+| --------------------------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
+| result                      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
+| result.hash                 | string |             | B64 hash of the transaction                                                                           |
+| result.type                 | string |             | The type of the transaction                                                                           |
+| result?.implicit_burn       | object |             | Implicit burn details                                                                                 |
+| result?.implicit_burn.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction                          |
+| result?.implicit_burn.payer | string |             | Address of the account that paid the fee                                                              |
 
 ### Errors
 
@@ -901,7 +1058,12 @@ Sends a single payment in bones to a given account address. Note that 1 HNT it 1
 {
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
 }
 ```
 
@@ -929,11 +1091,14 @@ Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_0
 
 ### Result
 
-| Name        | Type   | Constraints | Description                                                                                           |
-| ----------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
-| result      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
-| result.hash | string |             | B64 hash of the transaction                                                                           |
-| result.type | string |             | The type of the transaction                                                                           |
+| Name                        | Type   | Constraints | Description                                                                                           |
+| --------------------------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
+| result                      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
+| result.hash                 | string |             | B64 hash of the transaction                                                                           |
+| result.type                 | string |             | The type of the transaction                                                                           |
+| result?.implicit_burn       | object |             | Implicit burn details                                                                                 |
+| result?.implicit_burn.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction                          |
+| result?.implicit_burn.payer | string |             | Address of the account that paid the fee                                                              |
 
 ### Errors
 
@@ -963,7 +1128,12 @@ Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_0
 {
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
 }
 ```
 
@@ -1043,11 +1213,14 @@ Exports an encrypted wallet to the given path.
 
 ### Result
 
-| Name        | Type   | Constraints | Description                                                                                           |
-| ----------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
-| result      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
-| result.hash | string |             | B64 hash of the transaction                                                                           |
-| result.type | string |             | The type of the transaction                                                                           |
+| Name                        | Type   | Constraints | Description                                                                                           |
+| --------------------------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
+| result                      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
+| result.hash                 | string |             | B64 hash of the transaction                                                                           |
+| result.type                 | string |             | The type of the transaction                                                                           |
+| result?.implicit_burn       | object |             | Implicit burn details                                                                                 |
+| result?.implicit_burn.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction                          |
+| result?.implicit_burn.payer | string |             | Address of the account that paid the fee                                                              |
 
 ### Errors
 
@@ -1074,7 +1247,12 @@ Exports an encrypted wallet to the given path.
 {
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
 }
 ```
 
