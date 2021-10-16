@@ -63,12 +63,7 @@ load_chain(_Chain, State = #state{}) ->
 load_block(_Hash, Block, _Sync, Ledger, State = #state{
     db=DB, 
     default=DefaultCF, 
-    entries=EntriesCF, 
-    dc_entries=DCEntriesCF,
-    dc_entries_size=DCEntriesSizeCF,
-    securities=SecuritiesCF,
-    securities_size=SecuritiesSizeCF,
-    entries_size=EntriesSizeCF
+    entries=EntriesCF
 }) ->
     case Ledger of
         undefined ->
@@ -81,31 +76,49 @@ load_block(_Hash, Block, _Sync, Ledger, State = #state{
                 not_found ->
                     {ok, Batch} = rocksdb:batch(),
                     lager:info("Loading initial balances at height ~p", [Height]),
-                    rocksdb:batch_put(Batch, <<"initial_height">>, integer_to_binary(Height)),
+                    EntrySnapshotList = blockchain_ledger_v1:snapshot_raw_accounts(Ledger),
+                    DCSnapshotList = blockchain_ledger_v1:snapshot_raw_dc_accounts(Ledger),
+                    SecuritySnapshotList = blockchain_ledger_v1:snapshot_raw_security_accounts(Ledger),
                     lists:foreach(
-                        fun({Entries, CF}) ->
+                        fun(Entries) ->
                             lists:foreach(
-                                fun({AddressBin, EntryBin}) ->
-                                    SizeCF = case CF of
-                                        SecuritiesCF ->
-                                            SecuritiesSizeCF;
-                                        DCEntriesCF ->
-                                            DCEntriesSizeCF;
-                                        EntriesCF ->
-                                            EntriesSizeCF
-                                    end,
-                                    HeightEntryBin = erlang:term_to_binary({Height, EntryBin}),
-                                    BalanceKey = erlang:term_to_binary({?BIN_TO_B58(AddressBin), 1}),
-                                    rocksdb:batch_put(Batch, CF, BalanceKey, HeightEntryBin),
-                                    rocksdb:batch_put(Batch, SizeCF, AddressBin, integer_to_binary(1))
+                                fun({AddressBin, _}) ->
+                                    HeightEntryKeyBin = <<AddressBin/binary, Height/unsigned-integer>>,
+                                    case rocksdb:get(DB, EntriesCF, HeightEntryKeyBin, []) of
+                                        not_found ->
+                                            EntryBin = case lists:keyfind(AddressBin, 1, EntrySnapshotList) of
+                                                {_, EntryBin0} ->
+                                                    EntryBin0;
+                                                false ->
+                                                    ZeroEntry = blockchain_ledger_data_credits_entry_v1:new(0, 0),
+                                                    blockchain_ledger_data_credits_entry_v1:serialize(ZeroEntry)
+                                            end,
+                                            DCBin = case lists:keyfind(AddressBin, 1, DCSnapshotList) of
+                                                {_, DCBin0} ->
+                                                    DCBin0;
+                                                false ->
+                                                    DCZeroEntry = blockchain_ledger_data_credits_entry_v1:new(0, 0),
+                                                    blockchain_ledger_data_credits_entry_v1:serialize(DCZeroEntry)
+                                            end,
+                                            SecurityBin = case lists:keyfind(AddressBin, 1, SecuritySnapshotList) of
+                                                {_, SecurityBin0} ->
+                                                    SecurityBin0;
+                                                false ->
+                                                    SecurityZeroEntry = blockchain_ledger_security_entry_v1:new(0, 0),
+                                                    blockchain_ledger_security_entry_v1:serialize(SecurityZeroEntry)
+                                            end,
+                                            rocksdb:batch_put(Batch, DB, EntriesCF, HeightEntryKeyBin, <<EntryBin/binary, DCBin/binary, SecurityBin/binary>>, []);
+                                        _ ->
+                                            ok
+                                    end
                                 end,
                                 Entries
                             )
                         end,
                         [
-                            {blockchain_ledger_v1:snapshot_raw_accounts(Ledger), EntriesCF},
-                            {blockchain_ledger_v1:snapshot_raw_dc_accounts(Ledger), DCEntriesCF},
-                            {blockchain_ledger_v1:snapshot_raw_security_accounts(Ledger), SecuritiesCF}
+                            EntrySnapshotList,
+                            DCSnapshotList,
+                            SecuritySnapshotList
                         ]
                     ),
                     rocksdb:batch_put(Batch, <<"loaded_initial_balances">>, <<"true">>),
@@ -116,9 +129,7 @@ load_block(_Hash, Block, _Sync, Ledger, State = #state{
                     lager:info("Loading ledger changes for height ~p", [Height]),
                     TotalKeysChanged = ets:foldl(
                         fun ({Key}, Acc) ->
-                            batch_update_securities(Key, Ledger, Batch, Height),
-                            batch_update_data_credits(Key, Ledger, Batch, Height),
-                            batch_update_balance(Key, Ledger, Batch, Height),
+                            batch_update_entry(Key, Ledger, Batch, Height),
                             Acc + 1
                         end,
                         0,
@@ -180,71 +191,31 @@ load_db(Dir) ->
             {ok, State}
     end.
 
-batch_update_securities(Key, Ledger, Batch, Height) ->
-    {ok, #state{db=DB, securities=SecuritiesCF, securities_size=SecuritiesSizeCF}} = get_state(),
-    case blockchain_ledger_v1:find_security_entry(Key, Ledger) of
+batch_update_entry(Key, Ledger, Batch, Height) ->
+    {ok, #state{entries=EntriesCF}} = get_state(),
+    HeightEntryKeyBin = <<Key/binary, Height/unsigned-integer>>,
+    EntryBin = case blockchain_ledger_v1:find_entry(Key, Ledger) of
         {ok, Entry} ->
-            HeightEntryBin = erlang:term_to_binary({
-                Height,
-                blockchain_ledger_security_entry_v1:serialize(Entry)
-            }),
-            case rocksdb:get(DB, SecuritiesSizeCF, Key, []) of
-                {ok, EntrySizeBin} ->
-                    NewSize = binary_to_integer(EntrySizeBin) + 1,
-                    EntryKey = erlang:term_to_binary({?BIN_TO_B58(Key), NewSize}),
-                    rocksdb:batch_put(Batch, SecuritiesSizeCF, Key, integer_to_binary(NewSize));
-                not_found ->
-                    EntryKey = erlang:term_to_binary({?BIN_TO_B58(Key), 1}),
-                    rocksdb:batch_put(Batch, SecuritiesSizeCF, Key, integer_to_binary(1))
-            end,
-            rocksdb:batch_put(Batch, SecuritiesCF, EntryKey, HeightEntryBin);
-        {error, not_found} ->
-            ok
-    end.
-
-batch_update_data_credits(Key, Ledger, Batch, Height) ->
-    {ok, #state{db=DB, dc_entries=DCEntriesCF, dc_entries_size=DCEntriesSizeCF}} = get_state(),
-    case blockchain_ledger_v1:find_dc_entry(Key, Ledger) of
-        {ok, Entry} -> 
-            HeightEntryBin = erlang:term_to_binary({
-                Height,
-                blockchain_ledger_data_credits_entry_v1:serialize(Entry)
-            }),
-            case rocksdb:get(DB, DCEntriesSizeCF, Key, []) of
-                {ok, EntrySizeBin} ->
-                    NewSize = binary_to_integer(EntrySizeBin) + 1,
-                    EntryKey = erlang:term_to_binary({?BIN_TO_B58(Key), NewSize}),
-                    rocksdb:batch_put(Batch, DCEntriesSizeCF, Key, integer_to_binary(NewSize));
-                not_found ->
-                    EntryKey = erlang:term_to_binary({?BIN_TO_B58(Key), 1}),
-                    rocksdb:batch_put(Batch, DCEntriesSizeCF, Key, integer_to_binary(1))
-            end,
-            rocksdb:batch_put(Batch, DCEntriesCF, EntryKey, HeightEntryBin);
-        {error, dc_entry_not_found} ->
-            ok
-    end.
-
-batch_update_balance(Key, Ledger, Batch, Height) ->
-    {ok, #state{db=DB, entries=EntriesCF, entries_size=EntriesSizeCF}} = get_state(),
-    case blockchain_ledger_v1:find_entry(Key, Ledger) of
-        {ok, Entry} ->
-            HeightEntryBin = erlang:term_to_binary({
-                Height,
-                blockchain_ledger_entry_v1:serialize(Entry)
-            }),
-            case rocksdb:get(DB, EntriesSizeCF, Key, []) of
-                {ok, EntrySizeBin} ->
-                    NewSize = binary_to_integer(EntrySizeBin) + 1,
-                    EntryKey = erlang:term_to_binary({?BIN_TO_B58(Key), NewSize}),
-                    rocksdb:batch_put(Batch, EntriesSizeCF, Key, integer_to_binary(NewSize));
-                not_found ->
-                    EntryKey = erlang:term_to_binary({?BIN_TO_B58(Key), 1}),
-                    rocksdb:batch_put(Batch, EntriesSizeCF, Key, integer_to_binary(1))
-            end,
-            rocksdb:batch_put(Batch, EntriesCF, EntryKey, HeightEntryBin);
+            blockchain_ledger_entry_v1:serialize(Entry);
         {error,address_entry_not_found} ->
-            ok
-    end.
+            ZeroEntry = blockchain_ledger_entry_v1:new(0, 0),
+            blockchain_ledger_entry_v1:serialize(ZeroEntry)
+    end,
+    DCBin = case blockchain_ledger_v1:find_dc_entry(Key, Ledger) of
+        {ok, DCEntry} ->
+            blockchain_ledger_entry_v1:serialize(DCEntry);
+        {error,address_entry_not_found} ->
+            DCZeroEntry = blockchain_ledger_data_credits_entry_v1:new(0, 0),
+            blockchain_ledger_data_credits_entry_v1:serialize(DCZeroEntry)
+    end,
+    SecurityBin = case blockchain_ledger_v1:find_security_entry(Key, Ledger) of
+        {ok, SecurityEntry} ->
+            blockchain_ledger_entry_v1:serialize(SecurityEntry);
+        {error,address_entry_not_found} ->
+            SecurityZeroEntry = blockchain_ledger_security_entry_v1:new(0, 0),
+            blockchain_ledger_security_entry_v1:serialize(SecurityZeroEntry)
+    end,
+    rocksdb:batch_put(Batch, EntriesCF, HeightEntryKeyBin, <<EntryBin/binary, DCBin/binary, SecurityBin/binary>>).
 
 -spec get_historic_balance(AddressBin :: binary(), Height :: pos_integer()) ->
     {ok, map()} | {error, term()}.
