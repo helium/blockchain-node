@@ -20,6 +20,7 @@
     | #blockchain_txn_price_oracle_v1_pb{}
     | #blockchain_txn_token_burn_v1_pb{}
     | #blockchain_txn_transfer_hotspot_v1_pb{}
+    | #blockchain_txn_transfer_hotspot_v2_pb{}
     | #blockchain_txn_security_exchange_v1_pb{}
     | #blockchain_txn_stake_validator_v1_pb{}
     | #blockchain_txn_unstake_validator_v1_pb{}
@@ -337,6 +338,8 @@ nonce_info(#blockchain_txn_security_exchange_v1_pb{nonce = Nonce, payer = Addres
     {Address, Nonce, security};
 nonce_info(#blockchain_txn_transfer_hotspot_v1_pb{buyer = Buyer, buyer_nonce = Nonce}) ->
     {Buyer, Nonce, balance};
+nonce_info(#blockchain_txn_transfer_hotspot_v2_pb{gateway = GatewayAddress, nonce = Nonce}) ->
+    {GatewayAddress, Nonce, gateway};
 nonce_info(#blockchain_txn_token_burn_v1_pb{nonce = Nonce, payer = Address}) ->
     {Address, Nonce, balance};
 nonce_info(#blockchain_txn_stake_validator_v1_pb{address = Address}) ->
