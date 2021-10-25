@@ -39,11 +39,23 @@ handle_rpc(<<"account_get">>, {Param}) ->
     Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     case Ledger of
         {error, height_too_old} ->
-            case bn_balances:get_historic_balance(Address, Height) of
-                Account ->
-                    Account;
-                {error, not_found} ->
-                    ?jsonrpc_error({error, "height ~p is too old to get historic account data", [Height]})
+            case bn_balances:get_historic_entry(Address, Height) of
+                {ok, {EntryBin, DCEntryBin, SecurityEntryBin}} ->
+                    Entry = blockchain_ledger_entry_v1:deserialize(EntryBin),
+                    DCEntry = blockchain_ledger_data_credits_entry_v1:deserialize(DCEntryBin),
+                    SecurityEntry = blockchain_ledger_security_entry_v1:deserialize(SecurityEntryBin),
+                    #{
+                        address => ?BIN_TO_B58(Address),
+                        block => Height,
+                        balance => blockchain_ledger_entry_v1:balance(Entry),
+                        nonce => blockchain_ledger_entry_v1:nonce(Entry),
+                        sec_balance => blockchain_ledger_security_entry_v1:balance(SecurityEntry),
+                        sec_nonce => blockchain_ledger_security_entry_v1:nonce(SecurityEntry),
+                        dc_balance => blockchain_ledger_data_credits_entry_v1:balance(DCEntry),
+                        dc_nonce => blockchain_ledger_data_credits_entry_v1:nonce(DCEntry)
+                    };
+                {error, _} ->
+                    ?jsonrpc_error({error, "unable to retrieve account details for ~p at height ~p", [?BIN_TO_B58(Address), Height]})
             end;
         _ ->
             GetBalance = fun() ->

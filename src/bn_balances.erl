@@ -13,7 +13,7 @@
 ]).
 
 % api
--export([get_historic_balance/2]).
+-export([get_historic_entry/2]).
 % hooks
 -export([incremental_commit_hook/1, end_commit_hook/2]).
 
@@ -24,12 +24,7 @@
     dir :: file:filename_all(),
     db :: rocksdb:db_handle(),
     default :: rocksdb:cf_handle(),
-    entries :: rocksdb:cf_handle(),
-    dc_entries :: rocksdb:cf_handle(),
-    dc_entries_size :: rocksdb:cf_handle(),
-    securities :: rocksdb:cf_handle(),
-    securities_size :: rocksdb:cf_handle(),
-    entries_size ::rocksdb:cf_handle()
+    entries :: rocksdb:cf_handle()
 }).
 
 %%
@@ -79,65 +74,67 @@ load_block(_Hash, Block, _Sync, Ledger, State = #state{
                     EntrySnapshotList = blockchain_ledger_v1:snapshot_raw_accounts(Ledger),
                     DCSnapshotList = blockchain_ledger_v1:snapshot_raw_dc_accounts(Ledger),
                     SecuritySnapshotList = blockchain_ledger_v1:snapshot_raw_security_accounts(Ledger),
+                    ZeroEntry = blockchain_ledger_entry_v1:new(0, 0),
+                    ZeroEntryBin = blockchain_ledger_entry_v1:serialize(ZeroEntry),
+                    DCZeroEntry = blockchain_ledger_data_credits_entry_v1:new(0, 0),
+                    DCZeroEntryBin = blockchain_ledger_data_credits_entry_v1:serialize(DCZeroEntry),
+                    SecurityZeroEntry = blockchain_ledger_security_entry_v1:new(0, 0),
+                    SecurityZeroEntryBin = blockchain_ledger_security_entry_v1:serialize(SecurityZeroEntry),
                     lists:foreach(
-                        fun(Entries) ->
-                            lists:foreach(
-                                fun({AddressBin, _}) ->
-                                    HeightEntryKeyBin = <<AddressBin/binary, Height/unsigned-integer>>,
-                                    case rocksdb:get(DB, EntriesCF, HeightEntryKeyBin, []) of
-                                        not_found ->
-                                            EntryBin = case lists:keyfind(AddressBin, 1, EntrySnapshotList) of
-                                                {_, EntryBin0} ->
-                                                    EntryBin0;
-                                                false ->
-                                                    ZeroEntry = blockchain_ledger_data_credits_entry_v1:new(0, 0),
-                                                    blockchain_ledger_data_credits_entry_v1:serialize(ZeroEntry)
-                                            end,
-                                            DCBin = case lists:keyfind(AddressBin, 1, DCSnapshotList) of
-                                                {_, DCBin0} ->
-                                                    DCBin0;
-                                                false ->
-                                                    DCZeroEntry = blockchain_ledger_data_credits_entry_v1:new(0, 0),
-                                                    blockchain_ledger_data_credits_entry_v1:serialize(DCZeroEntry)
-                                            end,
-                                            SecurityBin = case lists:keyfind(AddressBin, 1, SecuritySnapshotList) of
-                                                {_, SecurityBin0} ->
-                                                    SecurityBin0;
-                                                false ->
-                                                    SecurityZeroEntry = blockchain_ledger_security_entry_v1:new(0, 0),
-                                                    blockchain_ledger_security_entry_v1:serialize(SecurityZeroEntry)
-                                            end,
-                                            rocksdb:batch_put(Batch, DB, EntriesCF, HeightEntryKeyBin, <<EntryBin/binary, DCBin/binary, SecurityBin/binary>>, []);
-                                        _ ->
-                                            ok
-                                    end
+                        fun({Entries, Type}) ->
+                            lists:foldl(
+                                fun({AddressBin, EntryBin}, Acc) ->
+                                    HeightBin = integer_to_binary(Height),
+                                    HeightEntryKeyBin = <<AddressBin/binary, HeightBin/binary>>,
+                                    HeightEntryValueBin = case Type of
+                                        "entries" ->
+                                            erlang:term_to_binary({EntryBin, DCZeroEntryBin, SecurityZeroEntryBin});
+                                        "dcs" ->
+                                            case rocksdb:get(DB, EntriesCF, HeightEntryKeyBin, []) of
+                                                not_found ->
+                                                    erlang:term_to_binary({ZeroEntryBin, EntryBin, SecurityZeroEntryBin});
+                                                {ok, B} ->
+                                                    {Entry, _, _} = erlang:binary_to_term(B),
+                                                    erlang:term_to_binary({Entry, EntryBin, SecurityZeroEntryBin})
+                                            end;
+                                        "securities" ->
+                                            case rocksdb:get(DB, EntriesCF, HeightEntryKeyBin, []) of
+                                                not_found ->
+                                                    erlang:term_to_binary({ZeroEntryBin, DCZeroEntryBin, EntryBin});
+                                                {ok, B} ->
+                                                    {Entry, DCEntry, _} = erlang:binary_to_term(B),
+                                                    erlang:term_to_binary({Entry, DCEntry, EntryBin})
+                                            end
+                                    end,
+                                    rocksdb:put(DB, EntriesCF, HeightEntryKeyBin, HeightEntryValueBin, []),
+                                    Acc
                                 end,
+                                [],
                                 Entries
                             )
                         end,
                         [
-                            EntrySnapshotList,
-                            DCSnapshotList,
-                            SecuritySnapshotList
+                            {EntrySnapshotList, "entries"},
+                            {DCSnapshotList, "dcs"},
+                            {SecuritySnapshotList, "securities"}
                         ]
                     ),
+                    lager:info("Finished saving initial balances"),
                     rocksdb:batch_put(Batch, <<"loaded_initial_balances">>, <<"true">>),
                     bn_db:batch_put_follower_height(Batch, DefaultCF, Height),
-                    rocksdb:write_batch(DB, Batch, [{sync, true}]);
-                {ok, _} ->
+                    rocksdb:write_batch(DB, Batch, []);
+                {ok, <<"true">>} ->
                     {ok, Batch} = rocksdb:batch(),
-                    lager:info("Loading ledger changes for height ~p", [Height]),
-                    TotalKeysChanged = ets:foldl(
+                    ets:foldl(
                         fun ({Key}, Acc) ->
                             batch_update_entry(Key, Ledger, Batch, Height),
-                            Acc + 1
+                            Acc
                         end,
-                        0,
+                        [],
                         ?MODULE
                     ),
-                    lager:info("Total changes: ~p", [TotalKeysChanged]),
                     bn_db:batch_put_follower_height(Batch, DefaultCF, Height),
-                    rocksdb:write_batch(DB, Batch, [{sync, true}]),
+                    rocksdb:write_batch(DB, Batch, []),
                     ets:delete_all_objects(?MODULE)
             end,
             {ok, State}
@@ -172,20 +169,15 @@ get_state() ->
 
 -spec load_db(file:filename_all()) -> {ok, #state{}} | {error, any()}.
 load_db(Dir) ->
-    case bn_db:open_db(Dir, ["default", "entries", "entries_size", "dc_entries", "dc_entries_size", "securities", "securities_size"]) of
+    case bn_db:open_db(Dir, ["default", "entries"], [{prefix_transform, {fixed_prefix_transform, 33}}]) of
         {error, _Reason} = Error ->
             Error;
-        {ok, DB, [DefaultCF, EntriesCF, EntriesSizeCF, DCEntriesCF, DCEntriesSizeCF, SecuritiesCF, SecuritiesSizeCF]} ->
+        {ok, DB, [DefaultCF, EntriesCF]} ->
             State = #state{
                 dir = Dir,
                 db = DB,
                 default = DefaultCF,
-                entries = EntriesCF,
-                entries_size = EntriesSizeCF,
-                dc_entries = DCEntriesCF,
-                dc_entries_size = DCEntriesSizeCF,
-                securities = SecuritiesCF,
-                securities_size = SecuritiesSizeCF
+                entries = EntriesCF
             },
             compact_db(State),
             {ok, State}
@@ -193,7 +185,8 @@ load_db(Dir) ->
 
 batch_update_entry(Key, Ledger, Batch, Height) ->
     {ok, #state{entries=EntriesCF}} = get_state(),
-    HeightEntryKeyBin = <<Key/binary, Height/unsigned-integer>>,
+    HeightBin = integer_to_binary(Height),
+    HeightEntryKeyBin = <<Key/binary, HeightBin/binary>>,
     EntryBin = case blockchain_ledger_v1:find_entry(Key, Ledger) of
         {ok, Entry} ->
             blockchain_ledger_entry_v1:serialize(Entry);
@@ -204,144 +197,47 @@ batch_update_entry(Key, Ledger, Batch, Height) ->
     DCBin = case blockchain_ledger_v1:find_dc_entry(Key, Ledger) of
         {ok, DCEntry} ->
             blockchain_ledger_entry_v1:serialize(DCEntry);
-        {error,address_entry_not_found} ->
+        {error,dc_entry_not_found} ->
             DCZeroEntry = blockchain_ledger_data_credits_entry_v1:new(0, 0),
             blockchain_ledger_data_credits_entry_v1:serialize(DCZeroEntry)
     end,
     SecurityBin = case blockchain_ledger_v1:find_security_entry(Key, Ledger) of
         {ok, SecurityEntry} ->
             blockchain_ledger_entry_v1:serialize(SecurityEntry);
-        {error,address_entry_not_found} ->
+        {error,not_found} ->
             SecurityZeroEntry = blockchain_ledger_security_entry_v1:new(0, 0),
             blockchain_ledger_security_entry_v1:serialize(SecurityZeroEntry)
     end,
-    rocksdb:batch_put(Batch, EntriesCF, HeightEntryKeyBin, <<EntryBin/binary, DCBin/binary, SecurityBin/binary>>).
+    rocksdb:batch_put(Batch, EntriesCF, HeightEntryKeyBin, erlang:term_to_binary({EntryBin, DCBin, SecurityBin})).
 
--spec get_historic_balance(AddressBin :: binary(), Height :: pos_integer()) ->
+-spec get_historic_entry(Key :: binary(), Height :: pos_integer()) ->
     {ok, map()} | {error, term()}.
-get_historic_balance(Key, Height) ->
+get_historic_entry(Key, Height) ->
     {ok, #state{
         db=DB,
-        entries=EntriesCF,
-        entries_size = EntriesSizeCF,
-        dc_entries = DCEntriesCF,
-        dc_entries_size = DCEntriesSizeCF,
-        securities = SecuritiesCF,
-        securities_size = SecuritiesSizeCF
+        entries=EntriesCF
     }} = get_state(),
-    case rocksdb:get(DB, <<"initial_height">>, []) of
-        {ok, HeightBin} ->
-            InitialHeight = binary_to_integer(HeightBin),
-            case InitialHeight > Height of
-                true ->
-                    {error, height_too_old};
-                false ->
-                    lists:foldl(
-                        fun({CF, SizeCF}, Acc) ->
-                            Account = case rocksdb:get(DB, SizeCF, Key, []) of
-                                {ok, SizeBin} ->
-                                    Size = binary_to_integer(SizeBin),
-                                    GetEntryBin = fun F(V) ->
-                                        HeightEntryKey = erlang:term_to_binary({?BIN_TO_B58(Key), V}),
-                                        case rocksdb:get(DB, CF, HeightEntryKey, []) of
-                                            {ok, HeightEntryBin} when V > 0 ->
-                                                case erlang:binary_to_term(HeightEntryBin) of
-                                                    {EntryHeight, EntryBin} when EntryHeight =< Height ->
-                                                        {ok, EntryBin};
-                                                    {EntryHeight, _} when EntryHeight > Height ->
-                                                        F(V-1)
-                                                end;
-                                            _ ->
-                                                not_found
-                                        end
-                                    end,
-                                    case CF of
-                                        EntriesCF ->
-                                            case GetEntryBin(Size) of
-                                                {ok, EntryBin} ->
-                                                    Entry = blockchain_ledger_entry_v1:deserialize(EntryBin),
-                                                    #{
-                                                        balance => blockchain_ledger_entry_v1:balance(Entry),
-                                                        nonce => blockchain_ledger_entry_v1:nonce(Entry)
-                                                    };
-                                                _ ->
-                                                    #{
-                                                        balance => 0,
-                                                        nonce => 0
-                                                    }
-                                            end;
-                                        DCEntriesCF ->
-                                            case GetEntryBin(Size) of
-                                                {ok, EntryBin} ->
-                                                    Entry = blockchain_ledger_data_credits_entry_v1:deserialize(EntryBin),
-                                                    #{
-                                                        dc_balance => blockchain_ledger_data_credits_entry_v1:balance(Entry),
-                                                        dc_nonce => blockchain_ledger_data_credits_entry_v1:nonce(Entry)
-                                                    };
-                                                _ ->
-                                                #{
-                                                        dc_balance => 0,
-                                                        dc_nonce => 0
-                                                    } 
-                                            end;
-                                        SecuritiesCF ->
-                                            case GetEntryBin(Size) of
-                                                {ok, EntryBin} ->
-                                                    Entry = blockchain_ledger_security_entry_v1:deserialize(EntryBin),
-                                                    #{
-                                                        sec_balance => blockchain_ledger_security_entry_v1:balance(Entry),
-                                                        sec_nonce => blockchain_ledger_security_entry_v1:nonce(Entry)
-                                                    };
-                                                _ ->
-                                                    #{
-                                                        sec_balance => 0,
-                                                        sec_nonce => 0
-                                                    }
-                                            end
-                                    end;
-                                not_found ->
-                                    case CF of
-                                        EntriesCF ->
-                                            #{
-                                                balance => 0,
-                                                nonce => 0
-                                            };
-                                        DCEntriesCF ->
-                                            #{
-                                                dc_balance => 0,
-                                                dc_nonce => 0    
-                                            };
-                                        SecuritiesCF ->
-                                            #{
-                                                sec_balance => 0,
-                                                sec_nonce => 0
-                                            }
-                                    end
-                            end,
-                            maps:merge(Acc, Account)
-                        end,
-                        #{address => ?BIN_TO_B58(Key), block => Height},
-                        [{EntriesCF, EntriesSizeCF}, {DCEntriesCF, DCEntriesSizeCF}, {SecuritiesCF, SecuritiesSizeCF}]
-                    )
-            end;
-        _ ->
-            {error, no_historic_balance}
+    ZeroHeightBin = integer_to_binary(0),
+    {ok, BalanceIterator} = rocksdb:iterator(DB, EntriesCF, [{iterate_lower_bound, <<Key/binary, ZeroHeightBin/binary>>}]),
+    % Increment requested height in order to account for the
+    % possibility that the requested height is the entry height
+    ReqHeightBin = integer_to_binary(Height + 1),
+    rocksdb:iterator_move(BalanceIterator, {seek, <<Key/binary, ReqHeightBin/binary>>}),
+    case rocksdb:iterator_move(BalanceIterator, prev) of
+        {ok, _, EntryBin} ->
+            {ok, erlang:binary_to_term(EntryBin)};
+        {ok, _} ->
+            {error, invalid_entry};
+        {error, Error} ->
+            {error, Error}
     end.
 
+
 compact_db(#state{
-    db = DB, default = Default,
-    entries=EntriesCF,
-    dc_entries=DCEntriesCF,
-    dc_entries_size=DCEntriesSizeCF,
-    securities=SecuritiesCF,
-    securities_size=SecuritiesSizeCF,
-    entries_size=EntriesSizeCF
+    db = DB,
+    default = Default,
+    entries=EntriesCF
 }) ->
     rocksdb:compact_range(DB, Default, undefined, undefined, []),
     rocksdb:compact_range(DB, EntriesCF, undefined, undefined, []),
-    rocksdb:compact_range(DB, EntriesSizeCF, undefined, undefined, []),
-    rocksdb:compact_range(DB, DCEntriesCF, undefined, undefined, []),
-    rocksdb:compact_range(DB, DCEntriesSizeCF, undefined, undefined, []),
-    rocksdb:compact_range(DB, SecuritiesCF, undefined, undefined, []),
-    rocksdb:compact_range(DB, SecuritiesSizeCF, undefined, undefined, []),
     ok.
