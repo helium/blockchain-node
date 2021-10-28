@@ -2,11 +2,13 @@
 
 set -euo pipefail
 
-PKGNAME="$(basename $(pwd))_$(git describe --long --always)_amd64.deb"
+VERSION=$( git describe --abbrev=0 --tags )
+
+PKGNAME="blockchain-node_${VERSION}_amd64.deb"
 
 buildkite-agent artifact download ${PKGNAME} .
 
 curl -u "${PACKAGECLOUD_API_KEY}:" \
      -F "package[distro_version_id]=190" \
      -F "package[package_file]=@${PKGNAME}" \
-     https://packagecloud.io/api/v1/repos/helium/internal/packages.json
+     https://packagecloud.io/api/v1/repos/helium/blockchain_node/packages.json
