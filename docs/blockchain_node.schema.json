@@ -107,6 +107,9 @@
         "type": {
           "type": "string",
           "description": "The type of the transaction"
+        },
+        "implicit_burn": {
+          "$ref": "#/definitions/implicit_burn"
         }
       },
       "required": [
@@ -181,6 +184,75 @@
       "required": [
         "price",
         "height"
+      ]
+    },
+    "implicit_burn": {
+      "type": "object",
+      "description": "Implicit burn details",
+      "properties": {
+        "fee": {
+          "type": "number",
+          "description": "Amount of HNT (in bones) burned for the fee of the corresponding transaction",
+          "example": 1401125
+        },
+        "payer": {
+          "type": "string",
+          "description": "Address of the account that paid the fee",
+          "example": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+        }
+      },
+      "required": [
+        "fee",
+        "payer"
+      ]
+    },
+    "htlc_receipt": {
+      "type": "object",
+      "description": "HTLC details",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "B58 address of the HTLC",
+          "example": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9"
+        },
+        "balance": {
+          "type": "number",
+          "description": "Amount of HNT locked",
+          "example": 10
+        },
+        "hashlock": {
+          "type": "string",
+          "description": "Hash to unlock HTLC",
+          "example": "AQEFmiouhIzFHBeCyW4J3sBKvBD3m2yuktTxUf14cIo"
+        },
+        "payee": {
+          "type": "string",
+          "description": "Address of the payee",
+          "example": "14zemQxLLimdTkHnpBU8f6o3DMmU9QfrreqsR1rYUF4tLveyc62"
+        },
+        "payer": {
+          "type": "string",
+          "description": "Address of the payer",
+          "example": "13udMhCkD4RmVCKKtprt96UAEBMppT55fs1z9viS6Uha8EWSWGe"
+        },
+        "redeemed_at": {
+          "type": "number",
+          "description": "Block height at which HTLC was redeemed",
+          "example": 930213
+        },
+        "timelock": {
+          "type": "number",
+          "description": "Number of blocks HTLC is locked for until payer can reclaim",
+          "example": 100
+        }
+      },
+      "required": [
+        "address",
+        "balance",
+        "hashlock",
+        "payee",
+        "payer",
+        "timelock"
       ]
     }
   },
@@ -466,6 +538,64 @@
         {
           "code": -3602,
           "description": "Invalid parameter"
+        }
+      ]
+    },
+    "implicit_burn_get": {
+      "summary": "Gets an implicit burn for a transaction hash.",
+      "description": "Gets an implicit burn for a transaction hash. Returns amount of HNT burned for a DC fee.",
+      "tags": [
+        "transactions"
+      ],
+      "params": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "type": "string",
+            "description": "Transaction hash to get implicit burn for.",
+            "example": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9"
+          }
+        },
+        "required": [
+          "hash"
+        ]
+      },
+      "result": {
+        "$ref": "#/definitions/implicit_burn"
+      },
+      "errors": [
+        {
+          "code": -100,
+          "description": "Implicit burn not found for transaction"
+        }
+      ]
+    },
+    "htlc_get": {
+      "summary": "Gets HTLC details for an HTLC address.",
+      "description": "Gets HTLC details for an HTLC address. If an HTLC was redeemed, it will also show the redemption height.",
+      "tags": [
+        "htlc"
+      ],
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "HTLC address",
+            "example": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "result": {
+        "$ref": "#/definitions/htlc_receipt"
+      },
+      "errors": [
+        {
+          "code": -100,
+          "description": "HTLC not found"
         }
       ]
     },

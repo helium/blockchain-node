@@ -127,6 +127,12 @@
                 <a class="nav-link" href="#pending_transaction_submit">pending_transaction_submit</a>
               </li>
               <li class="nav-item">
+                <a class="nav-link" href="#implicit_burn_get">implicit_burn_get</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#htlc_get">htlc_get</a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link" href="#wallet_create">wallet_create</a>
               </li>
               <li class="nav-item">
@@ -683,6 +689,24 @@
                           <td></td>
                           <td>The type of the transaction</td>
                         </tr>
+                        <tr>
+                          <td>result?.implicit_burn</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Implicit burn details</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.fee</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Amount of HNT (in bones) burned for the fee of the corresponding transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.payer</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the account that paid the fee</td>
+                        </tr>
                       </table>
                     </div>
                     
@@ -722,7 +746,12 @@
                     <pre class="bg-light">{
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
 }</pre>
                   </div>
                 </div>
@@ -1001,6 +1030,24 @@
                           <td>The type of the transaction</td>
                         </tr>
                         <tr>
+                          <td>result?.txn?.implicit_burn</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Implicit burn details</td>
+                        </tr>
+                        <tr>
+                          <td>result?.txn?.implicit_burn.fee</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Amount of HNT (in bones) burned for the fee of the corresponding transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result?.txn?.implicit_burn.payer</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the account that paid the fee</td>
+                        </tr>
+                        <tr>
                           <td>result.status</td>
                           <td>string</td>
                           <td></td>
@@ -1049,7 +1096,12 @@
   "jsonrpc": "2.0",
   "id": "1234567890",
   "result": {
-    "txn": {}
+    "txn": {
+      "implicit_burn": {
+        "fee": 1401125,
+        "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+      }
+    }
   }
 }</pre>
                   </div>
@@ -1242,6 +1294,24 @@
                           <td></td>
                           <td>The type of the transaction</td>
                         </tr>
+                        <tr>
+                          <td>result?.implicit_burn</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Implicit burn details</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.fee</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Amount of HNT (in bones) burned for the fee of the corresponding transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.payer</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the account that paid the fee</td>
+                        </tr>
                       </table>
                     </div>
                     
@@ -1278,7 +1348,293 @@
                     <pre class="bg-light">{
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="implicit_burn_get">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#implicit_burn_get-content"
+            >
+              <h4>
+                <span>implicit_burn_get</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">transactions</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="implicit_burn_get-content">
+              <p>Gets an implicit burn for a transaction hash.</p>
+              
+              <p>Gets an implicit burn for a transaction hash. Returns amount of HNT burned for a DC fee.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.hash</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Transaction hash to get implicit burn for.</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Implicit burn details</td>
+                        </tr>
+                        <tr>
+                          <td>result.fee</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Amount of HNT (in bones) burned for the fee of the corresponding transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result.payer</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the account that paid the fee</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Implicit burn not found for transaction</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "implicit_burn_get",
+  "params": {
+    "hash": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "fee": 1401125,
+    "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+  }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="htlc_get">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#htlc_get-content"
+            >
+              <h4>
+                <span>htlc_get</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">htlc</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="htlc_get-content">
+              <p>Gets HTLC details for an HTLC address.</p>
+              
+              <p>Gets HTLC details for an HTLC address. If an HTLC was redeemed, it will also show the redemption height.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>HTLC address</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>HTLC details</td>
+                        </tr>
+                        <tr>
+                          <td>result.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the HTLC</td>
+                        </tr>
+                        <tr>
+                          <td>result.balance</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Amount of HNT locked</td>
+                        </tr>
+                        <tr>
+                          <td>result.hashlock</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Hash to unlock HTLC</td>
+                        </tr>
+                        <tr>
+                          <td>result.payee</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the payee</td>
+                        </tr>
+                        <tr>
+                          <td>result.payer</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the payer</td>
+                        </tr>
+                        <tr>
+                          <td>result?.redeemed_at</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Block height at which HTLC was redeemed</td>
+                        </tr>
+                        <tr>
+                          <td>result.timelock</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Number of blocks HTLC is locked for until payer can reclaim</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>HTLC not found</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "htlc_get",
+  "params": {
+    "address": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9"
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "result": {
+    "address": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9",
+    "balance": 10,
+    "hashlock": "AQEFmiouhIzFHBeCyW4J3sBKvBD3m2yuktTxUf14cIo",
+    "payee": "14zemQxLLimdTkHnpBU8f6o3DMmU9QfrreqsR1rYUF4tLveyc62",
+    "payer": "13udMhCkD4RmVCKKtprt96UAEBMppT55fs1z9viS6Uha8EWSWGe",
+    "redeemed_at": 930213,
+    "timelock": 100
+  }
 }</pre>
                   </div>
                 </div>
@@ -1942,6 +2298,24 @@
                           <td></td>
                           <td>The type of the transaction</td>
                         </tr>
+                        <tr>
+                          <td>result?.implicit_burn</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Implicit burn details</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.fee</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Amount of HNT (in bones) burned for the fee of the corresponding transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.payer</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the account that paid the fee</td>
+                        </tr>
                       </table>
                     </div>
                     
@@ -1981,7 +2355,12 @@
                     <pre class="bg-light">{
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
 }</pre>
                   </div>
                 </div>
@@ -2095,6 +2474,24 @@
                           <td></td>
                           <td>The type of the transaction</td>
                         </tr>
+                        <tr>
+                          <td>result?.implicit_burn</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Implicit burn details</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.fee</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Amount of HNT (in bones) burned for the fee of the corresponding transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.payer</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the account that paid the fee</td>
+                        </tr>
                       </table>
                     </div>
                     
@@ -2134,7 +2531,12 @@
                     <pre class="bg-light">{
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
 }</pre>
                   </div>
                 </div>
@@ -2343,6 +2745,24 @@
                           <td></td>
                           <td>The type of the transaction</td>
                         </tr>
+                        <tr>
+                          <td>result?.implicit_burn</td>
+                          <td>object</td>
+                          <td></td>
+                          <td>Implicit burn details</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.fee</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Amount of HNT (in bones) burned for the fee of the corresponding transaction</td>
+                        </tr>
+                        <tr>
+                          <td>result?.implicit_burn.payer</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Address of the account that paid the fee</td>
+                        </tr>
                       </table>
                     </div>
                     
@@ -2377,7 +2797,12 @@
                     <pre class="bg-light">{
   "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {}
+  "result": {
+    "implicit_burn": {
+      "fee": 1401125,
+      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
+    }
+  }
 }</pre>
                   </div>
                 </div>
