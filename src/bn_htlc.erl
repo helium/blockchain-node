@@ -16,10 +16,11 @@ handle_rpc(<<"htlc_get">>, {Param}) ->
     case blockchain_ledger_v1:find_htlc(Address, Ledger) of
         {ok, HTLC} ->
             #{
-                payer => ?BIN_TO_B58(blockchain_ledger_htlc_v1:payer(HTLC)),
-                payee => ?BIN_TO_B58(blockchain_ledger_htlc_v1:payee(HTLC)),
-                amount => blockchain_ledger_htlc_v1:balance(HTLC),
+                address => Address,
+                balance => blockchain_ledger_htlc_v1:balance(HTLC),
                 hashlock => ?BIN_TO_B64(blockchain_ledger_htlc_v1:hashlock(HTLC)),
+                payee => ?BIN_TO_B58(blockchain_ledger_htlc_v1:payee(HTLC)),
+                payer => ?BIN_TO_B58(blockchain_ledger_htlc_v1:payer(HTLC)),
                 timelock => blockchain_ledger_htlc_v1:timelock(HTLC)
             };
         {error, not_found} ->
