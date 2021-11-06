@@ -228,3 +228,4 @@ compact_db(#state{db = DB, default = Default, transactions = TransactionsCF, jso
     rocksdb:compact_range(DB, TransactionsCF, undefined, undefined, []),
     rocksdb:compact_range(DB, JsonCF, undefined, undefined, []),
     ok.
+ 
