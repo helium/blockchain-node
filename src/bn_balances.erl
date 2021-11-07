@@ -211,7 +211,7 @@ batch_update_entry(Key, Ledger, Batch, Height) ->
     rocksdb:batch_put(Batch, EntriesCF, HeightEntryKeyBin, erlang:term_to_binary({EntryBin, DCBin, SecurityBin})).
 
 -spec get_historic_entry(Key :: binary(), Height :: pos_integer()) ->
-    {ok, map()} | {error, term()}.
+    {ok, {binary(), binary(), binary()}} | {error, term()}.
 get_historic_entry(Key, Height) ->
     {ok, #state{
         db=DB,
