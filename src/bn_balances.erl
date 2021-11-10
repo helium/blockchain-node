@@ -196,14 +196,14 @@ batch_update_entry(Key, Ledger, Batch, Height) ->
     end,
     DCBin = case blockchain_ledger_v1:find_dc_entry(Key, Ledger) of
         {ok, DCEntry} ->
-            blockchain_ledger_entry_v1:serialize(DCEntry);
+            blockchain_ledger_data_credits_entry_v1:serialize(DCEntry);
         {error,dc_entry_not_found} ->
             DCZeroEntry = blockchain_ledger_data_credits_entry_v1:new(0, 0),
             blockchain_ledger_data_credits_entry_v1:serialize(DCZeroEntry)
     end,
     SecurityBin = case blockchain_ledger_v1:find_security_entry(Key, Ledger) of
         {ok, SecurityEntry} ->
-            blockchain_ledger_entry_v1:serialize(SecurityEntry);
+            blockchain_ledger_security_entry_v1:serialize(SecurityEntry);
         {error,not_found} ->
             SecurityZeroEntry = blockchain_ledger_security_entry_v1:new(0, 0),
             blockchain_ledger_security_entry_v1:serialize(SecurityZeroEntry)
