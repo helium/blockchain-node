@@ -185,7 +185,7 @@ save_transactions(Height, Transactions, Ledger, Chain, #state{
     lists:foreach(
         fun(Txn) ->
             Hash = blockchain_txn:hash(Txn),
-            case application:get_env(blockchain, store_json, true) of
+            case application:get_env(blockchain, store_json, false) of
                 true ->
                     Json =
                         try
