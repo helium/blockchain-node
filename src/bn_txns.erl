@@ -62,9 +62,11 @@ maybe_load_genesis(Chain, State = #state{}) ->
         {ok, Block} ->
             Hash = blockchain_txn:hash(lists:last(blockchain_block:transactions(Block))),
             case get_transaction(Hash, State) of
-                {ok, _} -> % already loaded
+                % already loaded
+                {ok, _} ->
                     {ok, State};
-                _ -> % attempt to load
+                % attempt to load
+                _ ->
                     load_block([], Block, [], [], State)
             end;
         Error ->
@@ -157,7 +159,10 @@ get_transaction_json(Hash, State = #state{db = DB, json = JsonCF}) ->
                     Json = blockchain_txn:to_json(Txn, []),
                     case blockchain:get_implicit_burn(Hash, Chain) of
                         {ok, ImplicitBurn} ->
-                            {ok, Json#{block => Height, implicit_burn => blockchain_implicit_burn:to_json(ImplicitBurn, [])}};
+                            {ok, Json#{
+                                block => Height,
+                                implicit_burn => blockchain_implicit_burn:to_json(ImplicitBurn, [])
+                            }};
                         {error, _} ->
                             {ok, Json#{block => Height}}
                     end;
@@ -180,24 +185,30 @@ save_transactions(Height, Transactions, Ledger, Chain, #state{
     lists:foreach(
         fun(Txn) ->
             Hash = blockchain_txn:hash(Txn),
-            Json =
-                try
-                    blockchain_txn:to_json(Txn, [{ledger, Ledger}, {chain, Chain}])
-                catch
-                    _:_ ->
-                        blockchain_txn:to_json(Txn, [])
-                end,
+            case application:get_env(blockchain, store_json, true) of
+                true ->
+                    Json =
+                        try
+                            blockchain_txn:to_json(Txn, [{ledger, Ledger}, {chain, Chain}])
+                        catch
+                            _:_ ->
+                                blockchain_txn:to_json(Txn, [])
+                        end,
+                    ok = rocksdb:batch_put(
+                        Batch,
+                        JsonCF,
+                        Hash,
+                        jsone:encode(Json#{block => Height}, [undefined_as_null])
+                    );
+                _ ->
+                    ok
+            end,
+
             ok = rocksdb:batch_put(
                 Batch,
                 TransactionsCF,
                 Hash,
                 blockchain_txn:serialize(Txn)
-            ),
-            ok = rocksdb:batch_put(
-                Batch,
-                JsonCF,
-                Hash,
-                jsone:encode(Json#{block => Height}, [undefined_as_null])
             ),
             ok = rocksdb:batch_put(Batch, HeightsCF, Hash, HeightBin)
         end,
@@ -228,4 +239,3 @@ compact_db(#state{db = DB, default = Default, transactions = TransactionsCF, jso
     rocksdb:compact_range(DB, TransactionsCF, undefined, undefined, []),
     rocksdb:compact_range(DB, JsonCF, undefined, undefined, []),
     ok.
- 
