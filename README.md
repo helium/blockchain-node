@@ -13,11 +13,11 @@ documentation](https://helium.github.io/blockchain-node/blockchain_node-referenc
 
 ## Developer Usage
 
-* Clone this repository
+- Clone this repository
 
-* Run `make && make release` in the top level folder
+- Run `make && make release` in the top level folder
 
-* Run `make start` to start the application. Logs will be at
+- Run `make start` to start the application. Logs will be at
   `_build/dev/rel/blockchain_node/log/*`.
 
 Once started the application will start syncing the blockchain and
@@ -46,7 +46,6 @@ Update your `/etc/security/limits.conf` to increase your file limits. An
 example of what to add can be seen
 [here](https://github.com/helium/blockchain-node/blob/master/.buildkite/config/blockchain_limits.conf).
 
-
 ### Installing Ubuntu Required Packages
 
 If running on Ubuntu, you will need the following packages installed
@@ -59,6 +58,9 @@ sudo apt-get update
 sudo apt install esl-erlang=1:22.3.4.1-1 cmake libsodium-dev libssl-dev build-essential
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
+
+If you already have rust installed, please ensure it is at least at verion `1.51` or upgrade to the latest stable using `rustup update stable`
+
 ## Using Docker
 
 ### Building the Docker Image
