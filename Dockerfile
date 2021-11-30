@@ -5,6 +5,7 @@ FROM ${BUILDER_IMAGE} as builder
 
 ARG VERSION
 ARG BUILD_TARGET=docker_node
+ARG GENESIS_BLOCK_FILE=genesis.mainnet
 
 RUN apk add --no-cache --update \
     git tar build-base linux-headers autoconf automake libtool pkgconfig \
@@ -26,7 +27,8 @@ ENV CC=gcc CXX=g++ CFLAGS="-U__sun__" \
 ADD . /usr/src/node/
 
 RUN DIAGNOSTIC=1 ./rebar3 as ${BUILD_TARGET} tar -v ${VERSION} -n blockchain_node \
-        && mkdir -p /opt/docker \
+        && mkdir -p /opt/docker/update \
+        && wget -O /opt/docker/update/genesis https://snapshots.helium.wtf/${GENESIS_BLOCK_FILE} \
         && tar -zxvf _build/${BUILD_TARGET}/rel/*/*.tar.gz -C /opt/docker
 
 FROM ${RUNNER_IMAGE} as runner
@@ -34,7 +36,7 @@ FROM ${RUNNER_IMAGE} as runner
 ARG VERSION
 
 RUN apk add --no-cache --update ncurses dbus gmp libsodium gcc
-RUN ulimit -n 64000
+RUN ulimit -n 128000
 
 WORKDIR /opt/blockchain_node
 
@@ -44,9 +46,9 @@ ENV COOKIE=node \
     # add miner to path, for easy interactions
     PATH=/sbin:/bin:/usr/bin:/usr/local/bin:/opt/blockchain_node/bin:$PATH
 
-COPY --from=builder /opt/docker /opt/node
+COPY --from=builder /opt/docker /opt/blockchain_node
 
-RUN ln -sf /config /opt/node/releases/$VERSION
+RUN ln -sf /config /opt/blockchain_node/releases/$VERSION
 
 ENTRYPOINT ["/opt/blockchain_node/bin/blockchain_node"]
 CMD ["foreground"]

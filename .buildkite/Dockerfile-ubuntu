@@ -5,6 +5,7 @@ FROM ${BUILDER_IMAGE} as builder
 
 ARG VERSION
 ARG BUILD_TARGET=docker_rosetta
+ARG GENESIS_BLOCK_FILE=genesis.mainnet
 
 RUN set -xe \
 	    && apt update \
@@ -34,7 +35,8 @@ ADD . /usr/src/node/
 
 RUN ./rebar3 as ${BUILD_TARGET} tar -v ${VERSION} -n blockchain_node
 
-RUN mkdir -p /opt/docker \
+RUN mkdir -p /opt/docker/update \
+	&& wget -O /opt/docker/update/genesis https://snapshots.helium.wtf/${GENESIS_BLOCK_FILE} \
 	&& tar -zxvf _build/${BUILD_TARGET}/rel/*/*.tar.gz -C /opt/docker
 
 FROM ${RUNNER_IMAGE} as runner

@@ -26,7 +26,7 @@ case "$BUILD_TARGET" in
         ;;
     "docker_rosetta_testnet")
         echo "Building rosetta testnet docker"
-        DOCKER_BUILD_ARGS="--build-arg BUILDER_IMAGE=$UBUNTU_BUILDER --build-arg RUNNER_IMAGE=$UBUNTU_RUNNER $DOCKER_BUILD_ARGS"
+        DOCKER_BUILD_ARGS="--build-arg GENESIS_BLOCK_FILE=genesis.testnet --build-arg BUILDER_IMAGE=$UBUNTU_BUILDER --build-arg RUNNER_IMAGE=$UBUNTU_RUNNER $DOCKER_BUILD_ARGS"
         DOCKER_NAME="blockchain-node-testnet-ubuntu18-$VERSION"
         DOCKERFILE=".buildkite/Dockerfile-ubuntu"
         ;;

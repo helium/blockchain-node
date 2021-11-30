@@ -1,8 +1,8 @@
 .PHONY: compile rel cover test typecheck doc ci start stop reset
 
 REBAR=./rebar3
-SHORTSHA=`git rev-parse --short HEAD`
-PKG_NAME_VER=${SHORTSHA}
+ALPINE_IMAGE=erlang:23.3.4.9-alpine
+DOCKERFILE_VERSION=`git describe --abbrev=0`
 
 OS_NAME=$(shell uname -s)
 PROFILE ?= dev
@@ -52,7 +52,11 @@ console:
 	./_build/$(PROFILE)/rel/blockchain_node/bin/blockchain_node remote_console
 
 docker-build:
-	docker build -t helium/node .
+	docker build \
+		--build-arg VERSION=$(DOCKERFILE_VERSION) \
+		--build-arg BUILDER_IMAGE=$(ALPINE_IMAGE) \
+		--build-arg RUNNER_IMAGE=$(ALPINE_IMAGE) \
+		-t helium/node .
 
 docker-clean: docker-stop
 	docker rm node
