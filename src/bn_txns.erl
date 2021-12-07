@@ -105,7 +105,25 @@ handle_rpc(<<"transaction_get">>, {Param}) ->
         {error, _} = Error ->
             ?jsonrpc_error(Error)
     end;
-handle_rpc(_, _) ->
+handle_rpc(<<"transaction_submit">>, {Param}) ->
+    Bin = ?jsonrpc_b64_to_bin(<<"base64">>, Param),
+    Txn = blockchain_txn:deserialize(Bin),
+    Hash = blockchain_txn:hash(Txn),
+    lager:info("Submitting txn: ~p", [Txn]),
+    ok = blockchain_worker:submit_txn(Txn),
+    #{ <<"status">> => <<"ok">>, <<"hash">> => ?BIN_TO_B64(Hash) };
+handle_rpc(<<"transaction_verify">>, {Param}) ->
+    Bin = ?jsonrpc_b64_to_bin(<<"base64">>, Param),
+    Txn = blockchain_txn:deserialize(Bin),
+    Valid = blockchain_txn:is_valid(Txn, blockchain_worker:blockchain()),
+    lager:info("Validity of txn: ~p", [Valid]),
+    case Valid of
+        ok ->  #{ <<"is_valid">> => true };
+        {error, _Reason} ->
+            #{ <<"is_valid">> => false }
+    end;
+handle_rpc(Method, _) ->
+    lager:info("unknown method: ~p", [Method]),
     ?jsonrpc_error(method_not_found).
 
 %%
