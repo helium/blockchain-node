@@ -84,8 +84,7 @@ load_block(_Hash, Block, _Sync, Ledger, State = #state{
                         fun({Entries, Type}) ->
                             lists:foldl(
                                 fun({AddressBin, EntryBin}, Acc) ->
-                                    HeightBin = binary:encode_unsigned(Height),
-                                    HeightEntryKeyBin = <<AddressBin/binary, HeightBin/binary>>,
+                                    HeightEntryKeyBin = <<AddressBin/binary, Height:64/integer-unsigned-big>>,
                                     HeightEntryValueBin = case Type of
                                         "entries" ->
                                             erlang:term_to_binary({EntryBin, DCZeroEntryBin, SecurityZeroEntryBin});
@@ -185,8 +184,7 @@ load_db(Dir) ->
 
 batch_update_entry(Key, Ledger, Batch, Height) ->
     {ok, #state{entries=EntriesCF}} = get_state(),
-    HeightBin = binary:encode_unsigned(Height),
-    HeightEntryKeyBin = <<Key/binary, HeightBin/binary>>,
+    HeightEntryKeyBin = <<Key/binary, Height:64/integer-unsigned-big>>,
     EntryBin = case blockchain_ledger_v1:find_entry(Key, Ledger) of
         {ok, Entry} ->
             blockchain_ledger_entry_v1:serialize(Entry);
@@ -224,10 +222,8 @@ get_historic_entry(Key, Height0) ->
         _ ->
             Height0
     end,
-    ZeroHeightBin = binary:encode_unsigned(0),
-    ReqHeightBin = binary:encode_unsigned(Height),
-    {ok, BalanceIterator} = rocksdb:iterator(DB, EntriesCF, [{iterate_lower_bound, <<Key/binary, ZeroHeightBin/binary>>}]),
-    case rocksdb:iterator_move(BalanceIterator, {seek_for_prev, <<Key/binary, ReqHeightBin/binary>>}) of
+    {ok, BalanceIterator} = rocksdb:iterator(DB, EntriesCF, [{iterate_lower_bound, <<Key/binary, 0:64/integer-unsigned-big>>}, {total_order_seek, true}]),
+    case rocksdb:iterator_move(BalanceIterator, {seek_for_prev, <<Key/binary, Height:64/integer-unsigned-big>>}) of
         {ok, _, EntryBin} ->
             {ok, erlang:binary_to_term(EntryBin)};
         {ok, _} ->
@@ -235,7 +231,6 @@ get_historic_entry(Key, Height0) ->
         {error, Error} ->
             {error, Error}
     end.
-
 
 compact_db(#state{
     db = DB,
