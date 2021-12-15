@@ -84,8 +84,7 @@ load_block(_Hash, Block, _Sync, Ledger, State = #state{
                         fun({Entries, Type}) ->
                             lists:foldl(
                                 fun({AddressBin, EntryBin}, Acc) ->
-                                    HeightBin = integer_to_binary(Height),
-                                    HeightEntryKeyBin = <<AddressBin/binary, HeightBin/binary>>,
+                                    HeightEntryKeyBin = <<AddressBin/binary, Height:64/integer-unsigned-big>>,
                                     HeightEntryValueBin = case Type of
                                         "entries" ->
                                             erlang:term_to_binary({EntryBin, DCZeroEntryBin, SecurityZeroEntryBin});
@@ -185,8 +184,7 @@ load_db(Dir) ->
 
 batch_update_entry(Key, Ledger, Batch, Height) ->
     {ok, #state{entries=EntriesCF}} = get_state(),
-    HeightBin = integer_to_binary(Height),
-    HeightEntryKeyBin = <<Key/binary, HeightBin/binary>>,
+    HeightEntryKeyBin = <<Key/binary, Height:64/integer-unsigned-big>>,
     EntryBin = case blockchain_ledger_v1:find_entry(Key, Ledger) of
         {ok, Entry} ->
             blockchain_ledger_entry_v1:serialize(Entry);
@@ -212,18 +210,20 @@ batch_update_entry(Key, Ledger, Batch, Height) ->
 
 -spec get_historic_entry(Key :: binary(), Height :: pos_integer()) ->
     {ok, {binary(), binary(), binary()}} | {error, term()}.
-get_historic_entry(Key, Height) ->
+get_historic_entry(Key, Height0) ->
     {ok, #state{
         db=DB,
         entries=EntriesCF
     }} = get_state(),
-    ZeroHeightBin = integer_to_binary(0),
-    {ok, BalanceIterator} = rocksdb:iterator(DB, EntriesCF, [{iterate_lower_bound, <<Key/binary, ZeroHeightBin/binary>>}]),
-    % Increment requested height in order to account for the
-    % possibility that the requested height is the entry height
-    ReqHeightBin = integer_to_binary(Height + 1),
-    rocksdb:iterator_move(BalanceIterator, {seek, <<Key/binary, ReqHeightBin/binary>>}),
-    case rocksdb:iterator_move(BalanceIterator, prev) of
+    % Set ledger to 2nd block if genesis block is selected
+    Height = case Height0 of
+        1 ->
+            2;
+        _ ->
+            Height0
+    end,
+    {ok, BalanceIterator} = rocksdb:iterator(DB, EntriesCF, [{iterate_lower_bound, <<Key/binary, 0:64/integer-unsigned-big>>}, {total_order_seek, true}]),
+    case rocksdb:iterator_move(BalanceIterator, {seek_for_prev, <<Key/binary, Height:64/integer-unsigned-big>>}) of
         {ok, _, EntryBin} ->
             {ok, erlang:binary_to_term(EntryBin)};
         {ok, _} ->
@@ -231,7 +231,6 @@ get_historic_entry(Key, Height) ->
         {error, Error} ->
             {error, Error}
     end.
-
 
 compact_db(#state{
     db = DB,
