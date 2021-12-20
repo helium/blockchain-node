@@ -1,9 +1,8 @@
 ARG BUILDER_IMAGE
 ARG RUNNER_IMAGE
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} as deps-compiler
 
-ARG VERSION
 ARG BUILD_TARGET=docker_node
 
 RUN apk add --no-cache --update \
@@ -22,8 +21,17 @@ ENV CC=gcc CXX=g++ CFLAGS="-U__sun__" \
     PATH="/root/.cargo/bin:$PATH" \
     RUSTFLAGS="-C target-feature=-crt-static"
 
-# Add our code
-ADD . /usr/src/node/
+# Add and compile the dependencies to cache
+COPY ./rebar* ./
+
+RUN ./rebar3 compile
+
+FROM deps-compiler as builder
+
+ARG VERSION
+
+# Now add our code
+COPY . .
 
 RUN DIAGNOSTIC=1 ./rebar3 as ${BUILD_TARGET} tar -v ${VERSION} -n blockchain_node \
         && mkdir -p /opt/docker \
