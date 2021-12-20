@@ -1157,9 +1157,9 @@ Import an encrypted wallet into the wallet database. The password is only used t
 
 ### Result
 
-| Name   | Type    | Constraints | Description                             |
-| ------ | ------- | ----------- | --------------------------------------- |
-| result | boolean |             | Returns true if the wallet was imported |
+| Name   | Type   | Constraints | Description                  |
+| ------ | ------ | ----------- | ---------------------------- |
+| result | string |             | The public key of the wallet |
 
 ### Errors
 
@@ -1188,8 +1188,7 @@ Import an encrypted wallet into the wallet database. The password is only used t
 ```json
 {
   "jsonrpc": "2.0",
-  "id": "1234567890",
-  "result": true
+  "id": "1234567890"
 }
 ```
 

@@ -874,9 +874,8 @@
         ]
       },
       "result": {
-        "type": "boolean",
-        "description": "Returns true if the wallet was imported",
-        "example": true
+        "type": "string",
+        "description": "The public key of the wallet"
       },
       "errors": [
         {
