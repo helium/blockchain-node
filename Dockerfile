@@ -29,6 +29,7 @@ RUN ./rebar3 compile
 FROM deps-compiler as builder
 
 ARG VERSION
+ARG BUILD_TARGET=docker_node
 
 # Now add our code
 COPY . .
@@ -42,7 +43,7 @@ FROM ${RUNNER_IMAGE} as runner
 ARG VERSION
 
 RUN apk add --no-cache --update ncurses dbus gmp libsodium gcc
-RUN ulimit -n 64000
+RUN ulimit -n 128000
 
 WORKDIR /opt/blockchain_node
 
@@ -52,9 +53,9 @@ ENV COOKIE=node \
     # add miner to path, for easy interactions
     PATH=/sbin:/bin:/usr/bin:/usr/local/bin:/opt/blockchain_node/bin:$PATH
 
-COPY --from=builder /opt/docker /opt/node
+COPY --from=builder /opt/docker ./
 
-RUN ln -sf /config /opt/node/releases/$VERSION
+RUN ln -sf /config releases/$VERSION
 
-ENTRYPOINT ["/opt/blockchain_node/bin/blockchain_node"]
+ENTRYPOINT ["bin/blockchain_node"]
 CMD ["foreground"]
