@@ -1,7 +1,7 @@
 .PHONY: compile rel cover test typecheck doc ci start stop reset
 
 REBAR=./rebar3
-BUILDER_IMAGE=erlang:23-alpine
+BUILDER_IMAGE=erlang:23.3.4.8-alpine
 RUNNER_IMAGE=alpine:3.15
 APP_VERSION=$$(git tag --points-at HEAD)
 
@@ -66,7 +66,7 @@ docker-start:
 	mkdir -p $(HOME)/node_data
 	docker run -d --init \
 	--publish 44158:44158/tcp \
-	--publish 4467:4467 \
+	--publish 4467:4467/tcp \
 	--name node \
 	--mount type=bind,source=$(HOME)/node_data,target=/var/data \
 	helium/node
