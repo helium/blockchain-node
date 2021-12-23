@@ -3,7 +3,7 @@
 set -euo pipefail
 
 REGISTRY_HOST="quay.io/team-helium/blockchain-node"
-BUILDER_IMAGE="erlang:23.3.4.8-alpine"
+BUILDER_IMAGE="erlang:24-alpine"
 RUNNER_IMAGE="alpine:3.15"
 
 BUILD_TARGET=$1

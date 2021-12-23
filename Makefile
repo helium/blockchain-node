@@ -1,7 +1,7 @@
 .PHONY: compile rel cover test typecheck doc ci start stop reset
 
 REBAR=./rebar3
-BUILDER_IMAGE=erlang:23.3.4.8-alpine
+BUILDER_IMAGE=erlang:24-alpine
 RUNNER_IMAGE=alpine:3.15
 APP_VERSION=$$(git tag --points-at HEAD)
 
