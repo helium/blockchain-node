@@ -9,18 +9,21 @@
 %% jsonrpc_handler
 %%
 handle_rpc(<<"peer_book_self">>, []) ->
-    peer_book_response(self);
+    peer_book_response(blockchain_swarm:pubkey_bin());
+handle_rpc(<<"peer_book_address">>, {Param}) ->
+    BinAddress = ?jsonrpc_b58_to_bin(<<"address">>, Param),
+    peer_book_response(BinAddress);
 handle_rpc(_, _) ->
     ?jsonrpc_error(method_not_found).
 
 %%
 %% Internal
 %%
-peer_book_response(self) ->
+peer_book_response(PubKeyBin) ->
     TID = blockchain_swarm:tid(),
     Peerbook = libp2p_swarm:peerbook(TID),
 
-    {ok, Peer} = libp2p_peerbook:get(Peerbook, blockchain_swarm:pubkey_bin()),
+    {ok, Peer} = libp2p_peerbook:get(Peerbook, PubKeyBin),
     [ lists:foldl(fun(M, Acc) -> maps:merge(Acc, M) end,
                 format_peer(Peer),
                 [format_listen_addrs(TID, libp2p_peer:listen_addrs(Peer)),
