@@ -14,7 +14,7 @@ case "$BUILD_TARGET" in
     "docker_node")
         echo "Building docker node"
         DOCKER_BUILD_ARGS="--build-arg BUILDER_IMAGE=$BUILDER_IMAGE --build-arg RUNNER_IMAGE=$RUNNER_IMAGE $DOCKER_BUILD_ARGS"
-        DOCKER_NAME="blockchain-node-alpine-$VERSION"
+        DOCKER_NAME="blockchain-node-$VERSION"
         DOCKERFILE="./Dockerfile"
         ;;
     *)
