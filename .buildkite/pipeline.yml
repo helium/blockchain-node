@@ -7,14 +7,6 @@ steps:
     agents:
       queue: "erlang"
 
-  - if: build.tag =~ /^otp/
-    name: "build otp ubuntu"
-    commands:
-      - "git fetch -t"
-      - ".buildkite/scripts/ubuntu_otp_image.sh"
-    agents:
-      queue: "erlang"
-
   - if: build.tag != null && build.tag !~ /^otp/
     label: ":debian: build deb"
     commands:

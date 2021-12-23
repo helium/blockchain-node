@@ -3,9 +3,8 @@
 set -euo pipefail
 
 REGISTRY_HOST="quay.io/team-helium/blockchain-node"
-UBUNTU_BUILDER="quay.io/team-helium/build-images:ubuntu18-23.3.4.8"
-UBUNTU_RUNNER="quay.io/team-helium/build-images:ubuntu18-23.3.4.8"
-ALPINE_IMAGE="erlang:23.3.4.8-alpine"
+BUILDER_IMAGE="erlang:23.3.4.8-alpine"
+RUNNER_IMAGE="alpine:3.15"
 
 BUILD_TARGET=$1
 VERSION=$( git describe --abbrev=0 )
@@ -14,21 +13,9 @@ DOCKER_BUILD_ARGS="--build-arg VERSION=$VERSION --build-arg BUILD_TARGET=$BUILD_
 case "$BUILD_TARGET" in
     "docker_node")
         echo "Building docker node"
-        DOCKER_BUILD_ARGS="--build-arg BUILDER_IMAGE=$ALPINE_IMAGE --build-arg RUNNER_IMAGE=$ALPINE_IMAGE $DOCKER_BUILD_ARGS"
+        DOCKER_BUILD_ARGS="--build-arg BUILDER_IMAGE=$BUILDER_IMAGE --build-arg RUNNER_IMAGE=$RUNNER_IMAGE $DOCKER_BUILD_ARGS"
         DOCKER_NAME="blockchain-node-alpine-$VERSION"
         DOCKERFILE="./Dockerfile"
-        ;;
-    "docker_rosetta")
-        echo "Building rosetta docker"
-        DOCKER_BUILD_ARGS="--build-arg BUILDER_IMAGE=$UBUNTU_BUILDER --build-arg RUNNER_IMAGE=$UBUNTU_RUNNER $DOCKER_BUILD_ARGS"
-        DOCKER_NAME="blockchain-node-ubuntu18-$VERSION"
-        DOCKERFILE=".buildkite/Dockerfile-ubuntu"
-        ;;
-    "docker_rosetta_testnet")
-        echo "Building rosetta testnet docker"
-        DOCKER_BUILD_ARGS="--build-arg BUILDER_IMAGE=$UBUNTU_BUILDER --build-arg RUNNER_IMAGE=$UBUNTU_RUNNER $DOCKER_BUILD_ARGS"
-        DOCKER_NAME="blockchain-node-testnet-ubuntu18-$VERSION"
-        DOCKERFILE=".buildkite/Dockerfile-ubuntu"
         ;;
     *)
         echo "I don't know how to build $BUILD_TARGET"

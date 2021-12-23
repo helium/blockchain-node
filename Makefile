@@ -1,8 +1,9 @@
 .PHONY: compile rel cover test typecheck doc ci start stop reset
 
 REBAR=./rebar3
-ALPINE_IMAGE=erlang:24-alpine
-APP_VERSION=$$(git describe --abbrev=0)
+BUILDER_IMAGE=erlang:23-alpine
+RUNNER_IMAGE=alpine:3.15
+APP_VERSION=$$(git tag --points-at HEAD)
 
 OS_NAME=$(shell uname -s)
 PROFILE ?= dev
@@ -54,8 +55,8 @@ console:
 docker-build:
 	docker build \
         --build-arg VERSION=$(APP_VERSION) \
-        --build-arg BUILDER_IMAGE=$(ALPINE_IMAGE) \
-        --build-arg RUNNER_IMAGE=$(ALPINE_IMAGE) \
+        --build-arg BUILDER_IMAGE=$(BUILDER_IMAGE) \
+        --build-arg RUNNER_IMAGE=$(RUNNER_IMAGE) \
         -t helium/node .
 
 docker-clean: docker-stop
