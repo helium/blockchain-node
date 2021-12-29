@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-VERSION=$( git describe --abbrev=0 --tags )
+VERSION=$VERSION_TAG
 
 DIAGNOSTIC=1 ./rebar3 as $1 release -v ${VERSION} -n blockchain_node
 

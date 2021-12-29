@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-VERSION=$( git describe --abbrev=0 --tags )
+VERSION=$VERSION_TAG
 
 PKGNAME="blockchain-node_${VERSION}_amd64.deb"
 

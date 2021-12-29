@@ -9,8 +9,10 @@ steps:
 
   - if: build.tag != null && build.tag !~ /^otp/
     label: ":debian: build deb"
+    env:
+      VERSION_TAG: $BUILDKITE_TAG
     commands:
-      - "git fetch -t"
+      - "git tag $BUILDKITE_TAG"
       - ".buildkite/scripts/make_deb.sh prod"
     key: "deb"
     artifact_paths: "*.deb"
@@ -20,8 +22,9 @@ steps:
   - if: build.tag != null && build.tag !~ /^otp/
     label: "upload"
     name: ":cloud: upload to packagecloud"
+    env:
+      VERSION_TAG: $BUILDKITE_TAG
     commands:
-      - "git fetch -t"
       - ".buildkite/scripts/packagecloud_upload.sh"
     depends_on: "deb"
     agents:
@@ -30,26 +33,10 @@ steps:
   - if: build.tag != null && build.tag !~ /^otp/
     label: "prod docker"
     name: ":whale: build docker prod image"
+    env:
+      VERSION_TAG: $BUILDKITE_TAG
     commands:
-      - "git fetch -t"
+      - "git tag $BUILDKITE_TAG"
       - ".buildkite/scripts/make_docker.sh docker_node"
-    agents:
-      queue: "erlang"
-
-  - if: build.tag != null && build.tag !~ /^otp/
-    label: "docker"
-    name: ":whale: build rosetta docker image"
-    commands:
-      - "git fetch -t"
-      - ".buildkite/scripts/make_docker.sh docker_rosetta"
-    agents:
-      queue: "erlang"
-
-  - if: build.tag != null && build.tag !~ /^otp/
-    label: "docker"
-    name: ":whale: build rosetta testnet docker image"
-    commands:
-      - "git fetch -t"
-      - ".buildkite/scripts/make_docker.sh docker_rosetta_testnet"
     agents:
       queue: "erlang"
