@@ -7,7 +7,7 @@ BUILDER_IMAGE="erlang:24-alpine"
 RUNNER_IMAGE="alpine:3.15"
 
 BUILD_TARGET=$1
-VERSION=$(echo $VERSION_TAG | sed -e 's/otp-//')
+VERSION=$VERSION_TAG
 DOCKER_BUILD_ARGS="--build-arg VERSION=$VERSION --build-arg BUILD_TARGET=$BUILD_TARGET"
 
 case "$BUILD_TARGET" in

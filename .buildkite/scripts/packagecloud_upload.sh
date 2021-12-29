@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-VERSION=$(echo $VERSION_TAG | sed -e 's/otp-//')
+VERSION=$VERSION_TAG
 
 PKGNAME="blockchain-node_${VERSION}_amd64.deb"
 
