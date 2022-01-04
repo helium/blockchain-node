@@ -161,7 +161,7 @@ handle_rpc(<<"gateway_info_get">>, {Param}) ->
                     GWInfo = blockchain_ledger_entry_v1:deserialize(GWInfoBin),
                     #{
                         owner_address => blockchain_ledger_gateway_v2:owner_address(GWInfo),
-                        location => blockchain_ledger_gateway_v2:location(GWInfo),
+                        location => ?MAYBE_H3(blockchain_ledger_gateway_v2:location(GWInfo)),
                         alpha => blockchain_ledger_gateway_v2:alpha(GWInfo),
                         beta => blockchain_ledger_gateway_v2:beta(GWInfo),
                         delta => blockchain_ledger_gateway_v2:delta(GWInfo),
@@ -185,7 +185,7 @@ handle_rpc(<<"gateway_info_get">>, {Param}) ->
                 {ok, GWInfo} ->
                     #{
                         owner_address => ?BIN_TO_B58(blockchain_ledger_gateway_v2:owner_address(GWInfo)),
-                        location => blockchain_ledger_gateway_v2:location(GWInfo),
+                        location => ?MAYBE_H3(blockchain_ledger_gateway_v2:location(GWInfo)),
                         alpha => blockchain_ledger_gateway_v2:alpha(GWInfo),
                         beta => blockchain_ledger_gateway_v2:beta(GWInfo),
                         delta => blockchain_ledger_gateway_v2:delta(GWInfo),
