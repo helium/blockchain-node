@@ -18,3 +18,5 @@
         element(2, erl_angry_purple_tiger:animal_name(?BIN_TO_B58(V)))
     )
 ).
+
+-define(MAYBE_H3(B), blockchain_json:maybe_h3((B))).
