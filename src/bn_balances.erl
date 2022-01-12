@@ -55,18 +55,17 @@ follower_height(#state{db = DB, default = DefaultCF}) ->
 load_chain(_Chain, State = #state{}) ->
     {ok, State}.
 
-load_block(_Hash, Block, _Sync, Ledger, State = #state{
+load_block(_Hash, Block, _Sync, _Ledger, State = #state{
     db=DB, 
     default=DefaultCF, 
     entries=EntriesCF
 }) ->
-    case Ledger of
-        undefined ->
-            Height = blockchain_block:height(Block),
+    Height = blockchain_block:height(Block),
+    case blockchain:ledger_at(Height, blockchain_worker:blockchain()) of
+        {error, _} -> 
             bn_db:put_follower_height(DB, DefaultCF, Height),
             {ok, State};
-        _ ->
-            {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
+        {ok, Ledger} ->
             case rocksdb:get(DB, DefaultCF, <<"loaded_initial_balances">>, []) of
                 not_found ->
                     {ok, Batch} = rocksdb:batch(),
