@@ -156,7 +156,6 @@ end_commit_hook(_CF, Changes) ->
         end,
         Changes
     ),
-    lager:info("end_commit_hook. Inserting ~p keys.", [length(Keys)]),
     ets:insert(?MODULE, Keys).
 
 %%
@@ -224,10 +223,9 @@ get_historic_entry(Key, Height0) ->
     end,
     {ok, BalanceIterator} = rocksdb:iterator(DB, EntriesCF, [{iterate_lower_bound, <<Key/binary, 0:64/integer-unsigned-big>>}, {total_order_seek, true}]),
     case rocksdb:iterator_move(BalanceIterator, {seek_for_prev, <<Key/binary, Height:64/integer-unsigned-big>>}) of
-        {ok, <<KeyBin:33/binary, HeightReturned:64/integer-unsigned-big>>, EntryBin} ->
-            lager:info("Key: ~p, Height Returned: ~p, for Height queried: ~p.", [?BIN_TO_B58(KeyBin), HeightReturned, Height]),
+        {ok, _, EntryBin} ->
             {ok, erlang:binary_to_term(EntryBin)};
-        {ok, _} ->            
+        {ok, _} ->
             {error, invalid_entry};
         {error, Error} ->
             {error, Error}
