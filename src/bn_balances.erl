@@ -62,8 +62,7 @@ load_block(_Hash, Block, _Sync, _Ledger, State = #state{
 }) ->
     Height = blockchain_block:height(Block),
     case blockchain:ledger_at(Height, blockchain_worker:blockchain()) of
-        {error, _} ->
-            Height = blockchain_block:height(Block),
+        {error, _} -> 
             bn_db:put_follower_height(DB, DefaultCF, Height),
             {ok, State};
         {ok, Ledger} ->
