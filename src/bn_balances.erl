@@ -55,18 +55,18 @@ follower_height(#state{db = DB, default = DefaultCF}) ->
 load_chain(_Chain, State = #state{}) ->
     {ok, State}.
 
-load_block(_Hash, Block, _Sync, Ledger, State = #state{
+load_block(_Hash, Block, _Sync, _Ledger, State = #state{
     db=DB, 
     default=DefaultCF, 
     entries=EntriesCF
 }) ->
-    case Ledger of
-        undefined ->
+    Height = blockchain_block:height(Block),
+    case blockchain:ledger_at(Height, blockchain_worker:blockchain()) of
+        {error, _} ->
             Height = blockchain_block:height(Block),
             bn_db:put_follower_height(DB, DefaultCF, Height),
             {ok, State};
-        _ ->
-            {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
+        {ok, Ledger} ->
             case rocksdb:get(DB, DefaultCF, <<"loaded_initial_balances">>, []) of
                 not_found ->
                     {ok, Batch} = rocksdb:batch(),
@@ -157,6 +157,7 @@ end_commit_hook(_CF, Changes) ->
         end,
         Changes
     ),
+    lager:info("end_commit_hook. Inserting ~p keys.", [length(Keys)]),
     ets:insert(?MODULE, Keys).
 
 %%
@@ -224,9 +225,10 @@ get_historic_entry(Key, Height0) ->
     end,
     {ok, BalanceIterator} = rocksdb:iterator(DB, EntriesCF, [{iterate_lower_bound, <<Key/binary, 0:64/integer-unsigned-big>>}, {total_order_seek, true}]),
     case rocksdb:iterator_move(BalanceIterator, {seek_for_prev, <<Key/binary, Height:64/integer-unsigned-big>>}) of
-        {ok, _, EntryBin} ->
+        {ok, <<KeyBin:33/binary, HeightReturned:64/integer-unsigned-big>>, EntryBin} ->
+            lager:info("Key: ~p, Height Returned: ~p, for Height queried: ~p.", [?BIN_TO_B58(KeyBin), HeightReturned, Height]),
             {ok, erlang:binary_to_term(EntryBin)};
-        {ok, _} ->
+        {ok, _} ->            
             {error, invalid_entry};
         {error, Error} ->
             {error, Error}
