@@ -236,9 +236,13 @@ load_db(Dir) ->
 batch_update_entry(Key, Ledger, Batch, Height) ->
     {ok, #state{historic_gateways=HistoricGatewaysCF}} = get_state(),
     HeightEntryKeyBin = <<Key/binary, Height:64/integer-unsigned-big>>,
-    {ok, GWInfo} = blockchain_ledger_v1:find_gateway_info(Key, Ledger),
-    GWInfoBin = blockchain_ledger_gateway_v2:serialize(GWInfo),
-    rocksdb:batch_put(Batch, HistoricGatewaysCF, HeightEntryKeyBin, GWInfoBin).
+    case blockchain_ledger_v1:find_gateway_info(Key, Ledger) of
+        {ok, GWInfo} ->
+            GWInfoBin = blockchain_ledger_gateway_v2:serialize(GWInfo),
+            rocksdb:batch_put(Batch, HistoricGatewaysCF, HeightEntryKeyBin, GWInfoBin);
+        _ ->
+            ok
+    end.
 
 -spec get_historic_gateway_info(Key :: binary(), Height :: pos_integer()) ->
     {ok, {binary(), binary(), binary()}} | {error, term()}.
