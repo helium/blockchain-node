@@ -20,7 +20,7 @@
 % api
 -export([get_historic_gateway_info/2]).
 % hooks
--export([incremental_commit_hook/1, end_commit_hook/2]).
+-export([incremental_commit_hook/2, end_commit_hook/3]).
 
 -define(DB_FILE, "historic_gateways.db").
 -define(SERVER, ?MODULE).
@@ -68,8 +68,8 @@ load_block(_Hash, Block, _Sync, _Ledger, State = #state{
     Height = blockchain_block:height(Block),
     case blockchain:ledger_at(Height, blockchain_worker:blockchain()) of
         {error, _} -> 
-            bn_db:put_follower_height(DB, DefaultCF, Height),
-            {ok, State};
+            lager:info("No ledger available at height ~p.", [Height]),
+            ok;
         {ok, Ledger} ->
             case rocksdb:get(DB, DefaultCF, <<"loaded_initial_gateways">>, []) of
                 not_found ->
@@ -85,24 +85,13 @@ load_block(_Hash, Block, _Sync, _Ledger, State = #state{
                     ),
                     lager:info("Finished saving initial gateways"),
                     rocksdb:batch_put(Batch, <<"loaded_initial_gateways">>, <<"true">>),
-                    bn_db:batch_put_follower_height(Batch, DefaultCF, Height),
                     rocksdb:write_batch(DB, Batch, []);
-                {ok, <<"true">>} ->
-                    {ok, Batch} = rocksdb:batch(),
-                    ets:foldl(
-                        fun ({Key}, Acc) ->
-                            batch_update_entry(Key, Ledger, Batch, Height),
-                            Acc
-                        end,
-                        [],
-                        ?MODULE
-                    ),
-                    bn_db:batch_put_follower_height(Batch, DefaultCF, Height),
-                    rocksdb:write_batch(DB, Batch, []),
-                    ets:delete_all_objects(?MODULE)
-            end,
-            {ok, State}
-    end.
+                _ ->
+                    ok
+            end
+    end,
+    bn_db:put_follower_height(DB, DefaultCF, Height),
+    {ok, State}.
 
 terminate(_Reason, #state{db = DB}) ->
     rocksdb:close(DB).
@@ -111,10 +100,10 @@ terminate(_Reason, #state{db = DB}) ->
 %% Hooks
 %%
 
-incremental_commit_hook(_Changes) -> 
+incremental_commit_hook(_Changes, _Height) -> 
     ok.
 
-end_commit_hook(_CF, Changes) ->
+end_commit_hook(_CF, Changes, Height) ->
     Keys = lists:filtermap(
         fun
             ({put, Key}) -> {true, {Key}};
@@ -122,8 +111,23 @@ end_commit_hook(_CF, Changes) ->
         end,
         Changes
     ),
-    lager:info("Updating ~p gateways.", [length(Keys)]),
-    ets:insert(?MODULE, Keys).
+    {ok, #state{db=DB}} = get_state(),
+    case blockchain:ledger_at(Height, blockchain_worker:blockchain()) of
+        {error, _} -> 
+            lager:info("No ledger available at height ~p.", [Height]),
+            ok;
+        {ok, Ledger} ->
+            {ok, Batch} = rocksdb:batch(),
+            lists:foldl(
+                fun ({Key}, Acc) ->
+                    batch_update_entry(Key, Ledger, Batch, Height),
+                    Acc
+                end,
+                [],
+                Keys
+            ),
+            rocksdb:write_batch(DB, Batch, [])
+    end.
 
 %%
 %% jsonrpc_handler
@@ -254,8 +258,8 @@ get_historic_gateway_info(Key, Height0) ->
         _ ->
             Height0
     end,
-    {ok, BalanceIterator} = rocksdb:iterator(DB, HistoricGatewaysCF, [{iterate_lower_bound, <<Key/binary, 0:64/integer-unsigned-big>>}, {total_order_seek, true}]),
-    case rocksdb:iterator_move(BalanceIterator, {seek_for_prev, <<Key/binary, Height:64/integer-unsigned-big>>}) of
+    {ok, GatewayIterator} = rocksdb:iterator(DB, HistoricGatewaysCF, [{iterate_lower_bound, <<Key/binary, 0:64/integer-unsigned-big>>}, {total_order_seek, true}]),
+    case rocksdb:iterator_move(GatewayIterator, {seek_for_prev, <<Key/binary, Height:64/integer-unsigned-big>>}) of
         {ok, _, GWInfoBin} ->
             {ok, GWInfoBin};
         {ok, _} ->
