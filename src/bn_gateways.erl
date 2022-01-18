@@ -104,30 +104,19 @@ incremental_commit_hook(_Changes, _Height) ->
     ok.
 
 end_commit_hook(_CF, Changes, Height) ->
-    Keys = lists:filtermap(
+    {ok, #state{db=DB}} = get_state(),
+    {ok, Batch} = rocksdb:batch(),
+    lists:foldl(
         fun
-            ({put, Key}) -> {true, {Key}};
-            (_) -> false
+            ({put, Key}, Acc) -> 
+                batch_update_entry(Key, Batch, Height),
+                Acc;
+            (_, Acc) -> Acc
         end,
+        [],
         Changes
     ),
-    {ok, #state{db=DB}} = get_state(),
-    case blockchain:ledger_at(Height, blockchain_worker:blockchain()) of
-        {error, _} -> 
-            lager:info("No ledger available at height ~p.", [Height]),
-            ok;
-        {ok, Ledger} ->
-            {ok, Batch} = rocksdb:batch(),
-            lists:foldl(
-                fun ({Key}, Acc) ->
-                    batch_update_entry(Key, Ledger, Batch, Height),
-                    Acc
-                end,
-                [],
-                Keys
-            ),
-            rocksdb:write_batch(DB, Batch, [])
-    end.
+    rocksdb:write_batch(DB, Batch, []).
 
 %%
 %% jsonrpc_handler
@@ -237,9 +226,10 @@ load_db(Dir) ->
             {ok, State}
     end.
 
-batch_update_entry(Key, Ledger, Batch, Height) ->
+batch_update_entry(Key, Batch, Height) ->
     {ok, #state{historic_gateways=HistoricGatewaysCF}} = get_state(),
     HeightEntryKeyBin = <<Key/binary, Height:64/integer-unsigned-big>>,
+    {ok, Ledger} = blockchain:ledger_at(Height, blockchain_worker:blockchain()),
     {ok, GWInfo} = blockchain_ledger_v1:find_gateway_info(Key, Ledger),
     GWInfoBin = blockchain_ledger_gateway_v2:serialize(GWInfo),
     rocksdb:batch_put(Batch, HistoricGatewaysCF, HeightEntryKeyBin, GWInfoBin).
