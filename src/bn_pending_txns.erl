@@ -24,9 +24,10 @@
     | #blockchain_txn_security_exchange_v1_pb{}
     | #blockchain_txn_stake_validator_v1_pb{}
     | #blockchain_txn_unstake_validator_v1_pb{}
-    | #blockchain_txn_transfer_validator_stake_v1_pb{}.
+    | #blockchain_txn_transfer_validator_stake_v1_pb{}
+    | #blockchain_txn_state_channel_open_v1_pb{}.
 
--type nonce_type() :: none | balance | gateway | security.
+-type nonce_type() :: none | balance | gateway | security | oui.
 -type nonce_address() :: libp2p_crypto:pubkey_bin() | undefined.
 -type nonce() :: non_neg_integer().
 
@@ -312,7 +313,7 @@ get_max_nonce(Address, NonceType, Itr, {ok, _, BinTxn}, Acc) ->
 %% includes the actor whose nonce is impacted, the nonce in the transaction and %
 %% the type of nonce this is.
 %%
-%% NOTE: This list should include all tranaction types that can be submitted to
+%% NOTE: This list should include all transaction types that can be submitted to
 %% the endpoint. We try to make it match what blockchain-http supports.
 -spec nonce_info(supported_txn()) -> {nonce_address(), nonce(), nonce_type()}.
 nonce_info(#blockchain_txn_oui_v1_pb{owner = Owner}) ->
@@ -360,7 +361,11 @@ nonce_info(#blockchain_txn_stake_validator_v1_pb{address = Address}) ->
 nonce_info(#blockchain_txn_transfer_validator_stake_v1_pb{old_address = Address}) ->
     {Address, 0, none};
 nonce_info(#blockchain_txn_unstake_validator_v1_pb{address = Address}) ->
-    {Address, 0, none}.
+    {Address, 0, none};
+nonce_info(#blockchain_txn_state_channel_open_v1_pb{owner = Address, nonce = Nonce}) ->
+    {Address, Nonce, oui};
+nonce_info(_) ->
+    undefined.
 
 -spec load_db(Dir :: file:filename_all()) -> {ok, #state{}} | {error, any()}.
 load_db(Dir) ->
