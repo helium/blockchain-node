@@ -27,7 +27,7 @@
     | #blockchain_txn_transfer_validator_stake_v1_pb{}
     | #blockchain_txn_state_channel_open_v1_pb{}.
 
--type nonce_type() :: none | balance | gateway | security | oui.
+-type nonce_type() :: none | balance | gateway | security | dc_nonce.
 -type nonce_address() :: libp2p_crypto:pubkey_bin() | undefined.
 -type nonce() :: non_neg_integer().
 
@@ -350,7 +350,7 @@ nonce_info(#blockchain_txn_transfer_validator_stake_v1_pb{old_address = Address}
 nonce_info(#blockchain_txn_unstake_validator_v1_pb{address = Address}) ->
     {Address, 0, none};
 nonce_info(#blockchain_txn_state_channel_open_v1_pb{owner = Address, nonce = Nonce}) ->
-    {Address, Nonce, oui};
+    {Address, Nonce, dc_nonce};
 nonce_info(_) ->
     undefined.
 
