@@ -155,6 +155,19 @@ handle_rpc(<<"pending_transaction_submit">>, {Param}) ->
     catch
         _:_ -> ?jsonrpc_error(invalid_params)
     end;
+handle_rpc(<<"pending_transaction_verify">>, {Param}) ->
+    BinTxn = ?jsonrpc_b64_to_bin(<<"txn">>, Param),
+    try
+        Txn = blockchain_txn:deserialize(BinTxn),
+        Valid = blockchain_txn:is_valid(Txn, blockchain_worker:blockchain()),
+        case Valid of
+            ok ->  <<"valid">>;
+            {error, Reason} ->
+                Reason
+        end
+    catch
+        _:_ -> ?jsonrpc_error(invalid_params)
+    end;
 handle_rpc(_, _) ->
     ?jsonrpc_error(method_not_found).
 
