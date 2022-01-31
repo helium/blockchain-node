@@ -119,7 +119,7 @@
     },
     "pending_transaction": {
       "type": "object",
-      "description": "Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The tranaction will be absent if status is cleared or failed",
+      "description": "Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The transaction will be absent if status is cleared or failed",
       "properties": {
         "txn": {
           "$ref": "#/definitions/transaction"
@@ -524,7 +524,7 @@
           "txn": {
             "type": "string",
             "description": "B64 encoded transaction",
-            "example": "{ 'txn': 'QoWBCIe...'"
+            "example": "QoWBCIe..."
           }
         },
         "required": [
@@ -534,6 +534,33 @@
       "result": {
         "$ref": "#/definitions/transaction"
       },
+      "errors": [
+        {
+          "code": -3602,
+          "description": "Invalid parameter"
+        }
+      ]
+    },
+    "pending_transaction_verify": {
+      "summary": "Verify a transaction prior to submitting to the pending queue.",
+      "description": "Verifies a transaction prior to submitting to the pending queue. The transactions needs to be in a blockchain_txn envelope and base64 encoded. Result returns \"valid\" if the transaction is valid; otherwise, the error message is present.",
+      "tags": [
+        "pending transactions"
+      ],
+      "params": {
+        "type": "object",
+        "properties": {
+          "txn": {
+            "type": "string",
+            "description": "B64 encoded transaction",
+            "example": "QoWBCIe..."
+          }
+        },
+        "required": [
+          "txn"
+        ]
+      },
+      "result": "string",
       "errors": [
         {
           "code": -3602,

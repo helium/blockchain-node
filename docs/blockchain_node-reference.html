@@ -127,6 +127,9 @@
                 <a class="nav-link" href="#pending_transaction_submit">pending_transaction_submit</a>
               </li>
               <li class="nav-item">
+                <a class="nav-link" href="#pending_transaction_verify">pending_transaction_verify</a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link" href="#implicit_burn_get">implicit_burn_get</a>
               </li>
               <li class="nav-item">
@@ -1009,7 +1012,7 @@
                           <td>result</td>
                           <td>object</td>
                           <td></td>
-                          <td>Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The tranaction will be absent if status is cleared or failed</td>
+                          <td>Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The transaction will be absent if status is cleared or failed</td>
                         </tr>
                         <tr>
                           <td>result?.txn</td>
@@ -1340,7 +1343,7 @@
   "id": "1234567890",
   "method": "pending_transaction_submit",
   "params": {
-    "txn": "{ 'txn': 'QoWBCIe...'"
+    "txn": "QoWBCIe..."
   }
 }</pre>
 
@@ -1354,6 +1357,113 @@
       "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
     }
   }
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="pending_transaction_verify">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#pending_transaction_verify-content"
+            >
+              <h4>
+                <span>pending_transaction_verify</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">pending transactions</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="pending_transaction_verify-content">
+              <p>Verify a transaction prior to submitting to the pending queue.</p>
+              
+              <p>Verifies a transaction prior to submitting to the pending queue. The transactions needs to be in a blockchain_txn envelope and base64 encoded. Result returns "valid" if the transaction is valid; otherwise, the error message is present.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.txn</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B64 encoded transaction</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Result</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>result</td>
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-3602</td>
+                          <td></td>
+                          <td>Invalid parameter</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "pending_transaction_verify",
+  "params": {
+    "txn": "QoWBCIe..."
+  }
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890"
 }</pre>
                   </div>
                 </div>
