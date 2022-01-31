@@ -524,7 +524,7 @@
           "txn": {
             "type": "string",
             "description": "B64 encoded transaction",
-            "example": "{ 'txn': 'QoWBCIe...'"
+            "example": "QoWBCIe..."
           }
         },
         "required": [
@@ -553,7 +553,7 @@
           "txn": {
             "type": "string",
             "description": "B64 encoded transaction",
-            "example": "{ 'txn': 'QoWBCIe...'"
+            "example": "QoWBCIe..."
           }
         },
         "required": [
