@@ -16,6 +16,7 @@ This api follows the json-rpc 2.0 specification. More information available at h
 - [pending_transaction_get](#pending_transaction_get)
 - [pending_transaction_status](#pending_transaction_status)
 - [pending_transaction_submit](#pending_transaction_submit)
+- [pending_transaction_verify](#pending_transaction_verify)
 - [implicit_burn_get](#implicit_burn_get)
 - [htlc_get](#htlc_get)
 - [wallet_create](#wallet_create)
@@ -414,17 +415,17 @@ Get the previously submitted transaction with status.
 
 ### Result
 
-| Name                             | Type   | Constraints | Description                                                                                                                                                                |
-| -------------------------------- | ------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| result                           | object |             | Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The tranaction will be absent if status is cleared or failed |
-| result?.txn                      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result.                                                                      |
-| result?.txn.hash                 | string |             | B64 hash of the transaction                                                                                                                                                |
-| result?.txn.type                 | string |             | The type of the transaction                                                                                                                                                |
-| result?.txn?.implicit_burn       | object |             | Implicit burn details                                                                                                                                                      |
-| result?.txn?.implicit_burn.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction                                                                                               |
-| result?.txn?.implicit_burn.payer | string |             | Address of the account that paid the fee                                                                                                                                   |
-| result.status                    | string |             | One of pending, cleared or failed                                                                                                                                          |
-| result?.failed_reason            | string |             | Present during failed status                                                                                                                                               |
+| Name                             | Type   | Constraints | Description                                                                                                                                                                 |
+| -------------------------------- | ------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| result                           | object |             | Pending transaction details. The exact fields returned depend on the transaction type returned in the result. The transaction will be absent if status is cleared or failed |
+| result?.txn                      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result.                                                                       |
+| result?.txn.hash                 | string |             | B64 hash of the transaction                                                                                                                                                 |
+| result?.txn.type                 | string |             | The type of the transaction                                                                                                                                                 |
+| result?.txn?.implicit_burn       | object |             | Implicit burn details                                                                                                                                                       |
+| result?.txn?.implicit_burn.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction                                                                                                |
+| result?.txn?.implicit_burn.payer | string |             | Address of the account that paid the fee                                                                                                                                    |
+| result.status                    | string |             | One of pending, cleared or failed                                                                                                                                           |
+| result?.failed_reason            | string |             | Present during failed status                                                                                                                                                |
 
 ### Errors
 
@@ -562,7 +563,7 @@ Submits a pending transaction to the pending queue. The transactions needs to be
   "id": "1234567890",
   "method": "pending_transaction_submit",
   "params": {
-    "txn": "{ 'txn': 'QoWBCIe...'"
+    "txn": "QoWBCIe..."
   }
 }
 ```
@@ -579,6 +580,59 @@ Submits a pending transaction to the pending queue. The transactions needs to be
       "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
     }
   }
+}
+```
+
+<a name="pending_transaction_verify"></a>
+
+## pending_transaction_verify
+
+Verify a transaction prior to submitting to the pending queue.
+
+### Description
+
+Verifies a transaction prior to submitting to the pending queue. The transactions needs to be in a blockchain_txn envelope and base64 encoded. Result returns "valid" if the transaction is valid; otherwise, the error message is present.
+
+### Parameters
+
+| Name       | Type   | Constraints | Description             |
+| ---------- | ------ | ----------- | ----------------------- |
+| params     | object |             |                         |
+| params.txn | string |             | B64 encoded transaction |
+
+### Result
+
+| Name   | Type | Constraints | Description |
+| ------ | ---- | ----------- | ----------- |
+| result |      |             |             |
+
+### Errors
+
+| Code  | Message | Description       |
+| ----- | ------- | ----------------- |
+| -3602 |         | Invalid parameter |
+
+### Examples
+
+#### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890",
+  "method": "pending_transaction_verify",
+  "params": {
+    "txn": "QoWBCIe..."
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890"
 }
 ```
 

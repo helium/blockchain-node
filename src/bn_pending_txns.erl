@@ -323,7 +323,7 @@ nonce_info(#blockchain_txn_routing_v1_pb{nonce = Nonce}) ->
     %% oui changes could get their own oui nonce, but since there is no good actor
     %% address for it (an oui is not a public key which a lot of code relies on, we don't
     %% track it right now. We can't lean on the owner address since an owner can
-    %% have multipe ouis
+    %% have multiple ouis
     {undefined, Nonce, none};
 nonce_info(#blockchain_txn_vars_v1_pb{nonce = Nonce}) ->
     %% A vars transaction doesn't have a clear actor at all so we don't track it
@@ -333,10 +333,10 @@ nonce_info(#blockchain_txn_add_gateway_v1_pb{gateway = GatewayAddress}) ->
     %% expected to be 0 (a gateway can only be added once)
     {GatewayAddress, 0, gateway};
 nonce_info(#blockchain_txn_assert_location_v1_pb{nonce = Nonce, gateway = GatewayAddress}) ->
-    %% Asserting a location uses the gatway nonce
+    %% Asserting a location uses the gateway nonce
     {GatewayAddress, Nonce, gateway};
 nonce_info(#blockchain_txn_assert_location_v2_pb{nonce = Nonce, gateway = GatewayAddress}) ->
-    %% Asserting a location uses the gatway nonce
+    %% Asserting a location uses the gateway nonce
     {GatewayAddress, Nonce, gateway};
 nonce_info(#blockchain_txn_payment_v1_pb{nonce = Nonce, payer = Address}) ->
     {Address, Nonce, balance};
