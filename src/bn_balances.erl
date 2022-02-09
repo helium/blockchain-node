@@ -179,7 +179,7 @@ batch_update_entry(Key, Batch, Height) ->
     HeightEntryKeyBin = <<Key/binary, Height:64/integer-unsigned-big>>,
     {ok, Ledger} = blockchain:ledger_at(Height, blockchain_worker:blockchain()),
     EntryBin = case blockchain_ledger_v1:find_entry(Key, Ledger) of
-        {ok, Entry} ->            
+        {ok, Entry} ->
             blockchain_ledger_entry_v1:serialize(Entry);
         {error,address_entry_not_found} ->
             ZeroEntry = blockchain_ledger_entry_v1:new(0, 0),
