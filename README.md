@@ -100,3 +100,15 @@ Run the updated Docker container.
 Log the Node output.
 
 `tail -f $HOME/node_data/log/console.log`
+
+## Building for testnet
+
+When building for testnet, is it important to explicitly upgrade the `rebar.lock` file:
+```shell
+./rebar3 as dev_testnet upgrade blockchain
+```
+
+If switching back to a mainnet build, you must once again upgrade:
+```shell
+./rebar3 as dev upgrade blockchain
+```
