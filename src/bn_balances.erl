@@ -15,7 +15,7 @@
 % api
 -export([get_historic_entry/2]).
 % hooks
--export([incremental_commit_hook/1, end_commit_hook/2]).
+-export([incremental_commit_hook/2, end_commit_hook/3]).
 
 -define(DB_FILE, "balances.db").
 -define(SERVER, ?MODULE).
@@ -57,14 +57,13 @@ load_chain(_Chain, State = #state{}) ->
 
 load_block(_Hash, Block, _Sync, _Ledger, State = #state{
     db=DB, 
-    default=DefaultCF, 
+    default=DefaultCF,
     entries=EntriesCF
 }) ->
     Height = blockchain_block:height(Block),
     case blockchain:ledger_at(Height, blockchain_worker:blockchain()) of
-        {error, _} -> 
-            bn_db:put_follower_height(DB, DefaultCF, Height),
-            {ok, State};
+        {error, _} ->            
+            ok;
         {ok, Ledger} ->
             case rocksdb:get(DB, DefaultCF, <<"loaded_initial_balances">>, []) of
                 not_found ->
@@ -119,24 +118,13 @@ load_block(_Hash, Block, _Sync, _Ledger, State = #state{
                     ),
                     lager:info("Finished saving initial balances"),
                     rocksdb:batch_put(Batch, <<"loaded_initial_balances">>, <<"true">>),
-                    bn_db:batch_put_follower_height(Batch, DefaultCF, Height),
                     rocksdb:write_batch(DB, Batch, []);
-                {ok, <<"true">>} ->
-                    {ok, Batch} = rocksdb:batch(),
-                    ets:foldl(
-                        fun ({Key}, Acc) ->
-                            batch_update_entry(Key, Ledger, Batch, Height),
-                            Acc
-                        end,
-                        [],
-                        ?MODULE
-                    ),
-                    bn_db:batch_put_follower_height(Batch, DefaultCF, Height),
-                    rocksdb:write_batch(DB, Batch, []),
-                    ets:delete_all_objects(?MODULE)
-            end,
-            {ok, State}
-    end.
+                _ ->
+                    ok
+            end
+    end,
+    bn_db:put_follower_height(DB, DefaultCF, Height),
+    {ok, State}.
 
 terminate(_Reason, #state{db = DB}) ->
     rocksdb:close(DB).
@@ -145,18 +133,23 @@ terminate(_Reason, #state{db = DB}) ->
 %% Hooks
 %%
 
-incremental_commit_hook(_Changes) -> 
+incremental_commit_hook(_Changes, _Height) -> 
     ok.
 
-end_commit_hook(_CF, Changes) ->
-    Keys = lists:filtermap(
+end_commit_hook(_CF, Changes, Height) ->
+    {ok, #state{db=DB}} = get_state(),
+    {ok, Batch} = rocksdb:batch(),
+    lists:foldl(
         fun
-            ({put, Key}) -> {true, {Key}};
-            (_) -> false
+            ({put, Key}, Acc) -> 
+                batch_update_entry(Key, Batch, Height),
+                Acc;
+            (_, Acc) -> Acc
         end,
+        [],
         Changes
     ),
-    ets:insert(?MODULE, Keys).
+    rocksdb:write_batch(DB, Batch, []).
 
 %%
 %% Internal
@@ -181,9 +174,10 @@ load_db(Dir) ->
             {ok, State}
     end.
 
-batch_update_entry(Key, Ledger, Batch, Height) ->
+batch_update_entry(Key, Batch, Height) ->
     {ok, #state{entries=EntriesCF}} = get_state(),
     HeightEntryKeyBin = <<Key/binary, Height:64/integer-unsigned-big>>,
+    {ok, Ledger} = blockchain:ledger_at(Height, blockchain_worker:blockchain()),
     EntryBin = case blockchain_ledger_v1:find_entry(Key, Ledger) of
         {ok, Entry} ->
             blockchain_ledger_entry_v1:serialize(Entry);
