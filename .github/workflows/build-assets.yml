@@ -25,11 +25,14 @@ jobs:
           with:
             otp-version: ${{matrix.otp}}
             rebar3-version: ${{matrix.rebar3}}
-        - name: Install latest rustup
+        - name: Install latest rust toolchain
           uses: actions-rs/toolchain@v1
           with:
+            profile: minimal
             toolchain: stable
             override: true
+        - name: Install Dependencies
+          run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev autoconf automake libtool flex libgmp-dev cmake libsodium-dev libssl-dev bison libsnappy-dev libclang-dev doxygen
         - name: Build tarball
           run: |
             make tar PROFILE=prod
