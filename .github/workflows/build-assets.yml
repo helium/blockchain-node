@@ -18,8 +18,10 @@ jobs:
         matrix:
           otp: ['24.2']
           rebar3: ['3.15.1']
+          builds: ['prod', 'testnet']
       steps:
-        - uses: actions/checkout@v2
+        - name: Checkout Repo
+          uses: actions/checkout@v2
         - name: Install Erlang OTP ${{matrix.otp}} / rebar3 ${{matrix.rebar3}}
           uses: erlef/setup-beam@v1
           with:
@@ -32,10 +34,11 @@ jobs:
             toolchain: stable
             override: true
         - name: Install Dependencies
-          run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev autoconf automake libtool flex libgmp-dev cmake libsodium-dev libssl-dev bison libsnappy-dev libclang-dev doxygen
+          run: |
+            sudo apt-get update && sudo apt-get install -y cmake libsodium-dev libssl-dev build-essential
         - name: Build tarball
           run: |
-            make tar PROFILE=prod
+            make tar PROFILE=${{matrix.builds}}
         - name: Create Release
           id: create_release
           uses: actions/create-release@v1
@@ -53,6 +56,6 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
             upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-            asset_path: ./builds/blockchain_node/blockchain_node-${{ github.ref_name }}.tar.gz
+            asset_path: ./builds/${{matrix.builds}}/blockchain_node/blockchain_node-${{ github.ref_name }}.tar.gz
             asset_name: node-${{ github.ref_name }}.tar.gz
             asset_content_type: application/tar+gzip      
