@@ -32,7 +32,7 @@ jobs:
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         - name: Install Dependencies
           run: |
-            sudo apt-get update && sudo apt-get install -y cmake libsodium-dev libssl-dev libpcl-dev build-essential
+            sudo apt-get update && sudo apt-get install -y cmake libsodium-dev libssl-dev liblz4-dev build-essential
         - name: Build tarball
           run: |
             make tar PROFILE=${{ matrix.builds }}
