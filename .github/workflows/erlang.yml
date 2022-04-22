@@ -1,0 +1,46 @@
+name: Build Release Assets
+   
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: read
+
+jobs:
+    
+    build:
+      
+      name: Upload Release Asset
+      runs-on: ubuntu-latest
+      container:
+        image: erlang:24-alpine
+    
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v2
+        - name: Build tarball
+          run: |
+            make tar PROFILE=prod
+        - name: Create Release
+          id: create_release
+          uses: actions/create-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: ${{ github.ref }}
+            release_name: ${{ github.ref_name }}
+            draft: false
+            prerelease: false
+        - name: Upload Release Asset
+          id: upload-release-asset 
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+            asset_path: ./builds/blockchain_node/blockchain_node-${{ github.ref_name }}.tar.gz
+            asset_name: node-${{ github.ref_name }}.tar.gz
+            asset_content_type: application/tar+gzip
+            
