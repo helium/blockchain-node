@@ -27,12 +27,9 @@ jobs:
           with:
             otp-version: ${{matrix.otp}}
             rebar3-version: ${{matrix.rebar3}}
-        - name: Install latest rust toolchain
-          uses: actions-rs/toolchain@v1
-          with:
-            profile: minimal
-            toolchain: stable
-            override: true
+        - name: Install stable rustup
+          run: |
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
         - name: Install Dependencies
           run: |
             sudo apt-get update && sudo apt-get install -y cmake libsodium-dev libssl-dev build-essential
