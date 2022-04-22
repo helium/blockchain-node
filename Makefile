@@ -43,7 +43,7 @@ release:
 	$(REBAR) as $(PROFILE) do release
 
 tar:
-	$(REBAR) as $(PROFILE) do tar --output-dir=$(BUILDS_DIR)/$(PROFILE)
+	$(REBAR) as $(PROFILE) do tar --output-dir=$(BUILDS_DIR)
 
 .PHONY: docs
 
