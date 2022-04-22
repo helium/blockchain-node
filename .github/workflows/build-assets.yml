@@ -1,4 +1,4 @@
-name: Build Release Assets
+name: Build and Release
    
 on:
   push:
@@ -6,71 +6,102 @@ on:
       - '*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-    
-    build:
-      
-      name: Upload Release Asset
+    testnet:
+      name: Build Testnet
       runs-on: ubuntu-latest
-      timeout-minutes: 30
 
       env:
         ERLANG_ROCKSDB_OPTS: "-DWITH_BUNDLE_SNAPPY=ON -DWITH_BUNDLE_LZ4=ON"
         ERL_COMPILER_OPTIONS: "[deterministic]" 
-
-      strategy:
-        matrix:
-          otp: ['24.2']
-          rebar3: ['3.15.1']
-          builds: ['prod', 'testnet']
-          
+      
       steps:
         - name: Checkout Repo
           uses: actions/checkout@v2
 
-        - name: Install Erlang OTP ${{ matrix.otp }} / rebar3 ${{ matrix.rebar3 }}
-          uses: erlef/setup-beam@v1
+        - name: Setup Build Environment
+          uses: anthonyra/helium-erlang-builder-action@v1.2
           with:
-            otp-version: ${{ matrix.otp }}
-            rebar3-version: ${{ matrix.rebar3 }}
-        
-        - name: Install stable rustup
-          run: |
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        
-        - name: Install Dependencies
-          run: |
-            sudo apt-get install -y libsodium-dev liblz4-dev
-        
-        - name: Setup cmake
-          uses: jwlawson/actions-setup-cmake@v1.12
-          with:
-            cmake-version: '3.16.x'
+            otp-version: '24.2'
+            rebar3-version: '3.15.1'
 
-        - name: Build tarball
+        - name: Build Tar
           run: |
-            make tar PROFILE=${{ matrix.builds }}
+            make tar PROFILE=${{ github.job }}
+
+        - name: Upload Tar Artifact
+          uses: actions/upload-artifact@v2
+          with:
+            name: testnet-node
+            path: |
+              ./builds/${{ github.job }}/blockchain_node/blockchain_node-${{ github.ref_name }}.tar.gz
+
+    prod:
+      name: Build Production
+      runs-on: ubuntu-latest
+
+      env:
+        ERLANG_ROCKSDB_OPTS: "-DWITH_BUNDLE_SNAPPY=ON -DWITH_BUNDLE_LZ4=ON"
+        ERL_COMPILER_OPTIONS: "[deterministic]" 
+      
+      steps:
+        - name: Checkout Repo
+          uses: actions/checkout@v2
+
+        - name: Setup Build Environment
+          uses: anthonyra/helium-erlang-builder-action@v1.2
+          with:
+            otp-version: '24.2'
+            rebar3-version: '3.15.1'
+
+        - name: Build Tar
+          run: |
+            make tar PROFILE=${{ github.job }}
+
+        - name: Upload Tar Artifact
+          uses: actions/upload-artifact@v2
+          with:
+            name: prod-node
+            path: |
+              ./builds/${{ github.job }}/blockchain_node/blockchain_node-${{ github.ref_name }}.tar.gz
+
+    release:
+      name: Create Release
+      needs: [testnet, prod]
+      runs-on: ubuntu-latest
         
+      steps:
+        - name: Checkout Repo
+          uses: actions/checkout@v2
+
+        - name: Download Testnet Build
+          id: testnet
+          uses: actions/download-artifact@v2
+          with:
+            name: testnet-node
+
+        - name: Rename Testnet Build
+          working-directory: ${{steps.testnet.outputs.download-path}}
+          run: |
+            sudo mv ./blockchain_node-${{ github.ref_name }}.tar.gz ./testnet-node-${{ github.ref_name }}.tar.gz
+
+        - name: Download Production Build
+          id: prod
+          uses: actions/download-artifact@v2
+          with:
+            name: prod-node
+
+        - name: Rename Production Build
+          working-directory: ${{steps.prod.outputs.download-path}}
+          run:  |
+            sudo mv ./blockchain_node-${{ github.ref_name }}.tar.gz ./prod-node-${{ github.ref_name }}.tar.gz
+
         - name: Create Release
-          id: create_release
-          uses: actions/create-release@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          uses: softprops/action-gh-release@v1
           with:
-            tag_name: ${{ github.ref }}
-            release_name: ${{ github.ref_name }}
-            draft: false
-            prerelease: false
-        
-        - name: Upload Release Asset
-          id: upload-release-asset 
-          uses: actions/upload-release-asset@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-            asset_path: ./builds/blockchain_node/blockchain_node-${{ github.ref_name }}.tar.gz
-            asset_name: ${{ matrix.builds }}-node-${{ github.ref_name }}.tar.gz
-            asset_content_type: application/tar+gzip      
+            body_path: CHANGELOG.md
+            files: |
+              testnet-node-${{ github.ref_name }}.tar.gz
+              prod-node-${{ github.ref_name }}.tar.gz
