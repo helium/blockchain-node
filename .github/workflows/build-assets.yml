@@ -14,6 +14,7 @@ jobs:
       
       name: Upload Release Asset
       runs-on: ubuntu-20.04
+      timeout-minutes: 30
       strategy:
         matrix:
           otp: ['24.2']
@@ -32,7 +33,7 @@ jobs:
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         - name: Install Dependencies
           run: |
-            sudo apt-get update && sudo apt-get install -y cmake libsodium-dev libssl-dev liblz4-dev build-essential
+            sudo apt-get update && sudo apt-get install -y cmake libsodium-dev libssl-dev librocksdb-dev build-essential
         - name: Build tarball
           run: |
             make tar PROFILE=${{ matrix.builds }}
