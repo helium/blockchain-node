@@ -13,30 +13,36 @@ jobs:
     build:
       
       name: Upload Release Asset
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-latest
       timeout-minutes: 30
       strategy:
         matrix:
           otp: ['24.2']
           rebar3: ['3.15.1']
           builds: ['prod', 'testnet']
+      
       steps:
         - name: Checkout Repo
           uses: actions/checkout@v2
+
         - name: Install Erlang OTP ${{ matrix.otp }} / rebar3 ${{ matrix.rebar3 }}
           uses: erlef/setup-beam@v1
           with:
             otp-version: ${{ matrix.otp }}
             rebar3-version: ${{ matrix.rebar3 }}
+        
         - name: Install stable rustup
           run: |
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        
         - name: Install Dependencies
           run: |
-            sudo apt-get update && sudo apt-get install -y cmake libsodium-dev liblz4-dev && sudo rm -rf /var/lib/apt/lists/*
+            sudo apt-get install -y cmake libsodium-dev liblz4-dev
+        
         - name: Build tarball
           run: |
             make tar PROFILE=${{ matrix.builds }}
+        
         - name: Create Release
           id: create_release
           uses: actions/create-release@v1
@@ -47,6 +53,7 @@ jobs:
             release_name: ${{ github.ref_name }}
             draft: false
             prerelease: false
+        
         - name: Upload Release Asset
           id: upload-release-asset 
           uses: actions/upload-release-asset@v1
