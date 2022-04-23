@@ -17,9 +17,6 @@ jobs:
       timeout-minutes: 30
 
       env:
-        CC: gcc
-        CXX: g++
-        CFLAGS: "-U__sun__"
         ERLANG_ROCKSDB_OPTS: "-DWITH_BUNDLE_SNAPPY=ON -DWITH_BUNDLE_LZ4=ON"
         ERL_COMPILER_OPTIONS: "[deterministic]" 
 
