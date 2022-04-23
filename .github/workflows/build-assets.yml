@@ -15,11 +15,16 @@ jobs:
       name: Upload Release Asset
       runs-on: ubuntu-latest
       timeout-minutes: 30
+
+      env:
+        ERLANG_ROCKSDB_OPTS: "-DWITH_BUNDLE_SNAPPY=ON -DWITH_BUNDLE_LZ4=ON"
+        ERL_COMPILER_OPTIONS: "[deterministic]" 
+
       strategy:
         matrix:
           otp: ['24.2']
           rebar3: ['3.15.1']
-          builds: ['prod', 'testnet']
+          builds: ['prod']
       
       steps:
         - name: Checkout Repo
@@ -43,9 +48,6 @@ jobs:
           uses: jwlawson/actions-setup-cmake@v1.12
           with:
             cmake-version: '3.16.x'
-            
-        - name: Use cmake
-          run: cmake --version
 
         - name: Build tarball
           run: |
