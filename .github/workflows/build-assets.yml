@@ -37,8 +37,16 @@ jobs:
         
         - name: Install Dependencies
           run: |
-            sudo apt-get install -y cmake libsodium-dev liblz4-dev
+            sudo apt-get install -y libsodium-dev liblz4-dev
         
+        - name: Setup cmake
+          uses: jwlawson/actions-setup-cmake@v1.12
+          with:
+            cmake-version: '3.16.x'
+            
+        - name: Use cmake
+          run: cmake --version
+
         - name: Build tarball
           run: |
             make tar PROFILE=${{ matrix.builds }}
