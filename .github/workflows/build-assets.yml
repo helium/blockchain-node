@@ -15,6 +15,14 @@ jobs:
       name: Upload Release Asset
       runs-on: ubuntu-latest
       timeout-minutes: 30
+
+      env:
+        CC: gcc
+        CXX: g++
+        CFLAGS: "-U__sun__"
+        ERLANG_ROCKSDB_OPTS: "-DWITH_BUNDLE_SNAPPY=ON -DWITH_BUNDLE_LZ4=ON"
+        ERL_COMPILER_OPTIONS: "[deterministic]" 
+
       strategy:
         matrix:
           otp: ['24.2']
@@ -43,9 +51,6 @@ jobs:
           uses: jwlawson/actions-setup-cmake@v1.12
           with:
             cmake-version: '3.16.x'
-            
-        - name: Use cmake
-          run: cmake --version
 
         - name: Build tarball
           run: |
