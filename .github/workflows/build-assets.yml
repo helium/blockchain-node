@@ -24,8 +24,8 @@ jobs:
         matrix:
           otp: ['24.2']
           rebar3: ['3.15.1']
-          builds: ['prod']
-      
+          builds: ['prod', 'testnet']
+          
       steps:
         - name: Checkout Repo
           uses: actions/checkout@v2
