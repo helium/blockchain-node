@@ -7,6 +7,7 @@ APP_VERSION=$$(git tag --points-at HEAD)
 
 OS_NAME=$(shell uname -s)
 PROFILE ?= dev
+BUILDS_DIR ?= ./builds
 
 ifeq (${OS_NAME},FreeBSD)
 make="gmake"
@@ -40,6 +41,9 @@ doc:
 
 release:
 	$(REBAR) as $(PROFILE) do release
+
+tar:
+	$(REBAR) as $(PROFILE) do tar --output-dir=$(BUILDS_DIR)/$(PROFILE)
 
 .PHONY: docs
 

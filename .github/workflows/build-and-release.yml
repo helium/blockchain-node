@@ -1,0 +1,107 @@
+name: Build and Release
+   
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+
+jobs:
+    testnet:
+      name: Build Testnet
+      runs-on: ubuntu-latest
+
+      env:
+        ERLANG_ROCKSDB_OPTS: "-DWITH_BUNDLE_SNAPPY=ON -DWITH_BUNDLE_LZ4=ON"
+        ERL_COMPILER_OPTIONS: "[deterministic]" 
+      
+      steps:
+        - name: Checkout Repo
+          uses: actions/checkout@v2
+
+        - name: Setup Build Environment
+          uses: anthonyra/helium-erlang-builder-action@v1.2
+          with:
+            otp-version: '24.2'
+            rebar3-version: '3.15.1'
+
+        - name: Build Tar
+          run: |
+            make tar PROFILE=${{ github.job }}
+
+        - name: Upload Tar Artifact
+          uses: actions/upload-artifact@v2
+          with:
+            name: testnet-node
+            path: |
+              ./builds/${{ github.job }}/blockchain_node/blockchain_node-${{ github.ref_name }}.tar.gz
+
+    prod:
+      name: Build Mainnet
+      runs-on: ubuntu-latest
+
+      env:
+        ERLANG_ROCKSDB_OPTS: "-DWITH_BUNDLE_SNAPPY=ON -DWITH_BUNDLE_LZ4=ON"
+        ERL_COMPILER_OPTIONS: "[deterministic]" 
+      
+      steps:
+        - name: Checkout Repo
+          uses: actions/checkout@v2
+
+        - name: Setup Build Environment
+          uses: anthonyra/helium-erlang-builder-action@v1.2
+          with:
+            otp-version: '24.2'
+            rebar3-version: '3.15.1'
+
+        - name: Build Tar
+          run: |
+            make tar PROFILE=${{ github.job }}
+
+        - name: Upload Tar Artifact
+          uses: actions/upload-artifact@v2
+          with:
+            name: prod-node
+            path: |
+              ./builds/${{ github.job }}/blockchain_node/blockchain_node-${{ github.ref_name }}.tar.gz
+
+    release:
+      name: Create Release
+      needs: [testnet, prod]
+      runs-on: ubuntu-latest
+        
+      steps:
+        - name: Checkout Repo
+          uses: actions/checkout@v2
+
+        - name: Download Testnet Build
+          id: testnet
+          uses: actions/download-artifact@v2
+          with:
+            name: testnet-node
+
+        - name: Rename Testnet Build
+          working-directory: ${{steps.testnet.outputs.download-path}}
+          run: |
+            sudo mv ./blockchain_node-${{ github.ref_name }}.tar.gz ./testnet-node-${{ github.ref_name }}.tar.gz
+
+        - name: Download Production Build
+          id: prod
+          uses: actions/download-artifact@v2
+          with:
+            name: prod-node
+
+        - name: Rename Production Build
+          working-directory: ${{steps.prod.outputs.download-path}}
+          run:  |
+            sudo mv ./blockchain_node-${{ github.ref_name }}.tar.gz ./mainnet-node-${{ github.ref_name }}.tar.gz
+
+        - name: Create Release
+          uses: softprops/action-gh-release@v1
+          with:
+            body_path: CHANGELOG.md
+            files: |
+              testnet-node-${{ github.ref_name }}.tar.gz
+              mainnet-node-${{ github.ref_name }}.tar.gz
