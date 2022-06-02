@@ -20,7 +20,8 @@
      pbkdf2,
      observer_cli,
      clique,
-     recon
+     recon,
+     grpcbox
     ]
    },
    {included_applications, [blockchain]},
