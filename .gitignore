@@ -20,3 +20,5 @@ rebar3.crashdump
 data/
 .env
 .envrc
+src/grpc/autogen
+*~
