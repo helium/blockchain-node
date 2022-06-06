@@ -44,7 +44,6 @@ doc:
 grpc: | $(grpc_services_directory)
 	@echo "generating grpc services"
 	REBAR_CONFIG="config/grpc_server_gen.config" $(REBAR) grpc gen
-	REBAR_CONFIG="config/grpc_client_gen.config" $(REBAR) grpc gen
 
 clean_grpc:
 	@echo "cleaning grpc services"

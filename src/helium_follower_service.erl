@@ -78,7 +78,7 @@ txn_stream(
     lager:debug("subscribing client to txn stream with msg ~p", [_Msg]),
     ok = blockchain_event:add_handler(self()),
     TxnTypes = lists:foldl(fun(BinType, AtomTypes) ->
-                               case (catch binary_to_existing_atom(BinType)) of
+                               case (catch binary_to_existing_atom(BinType, utf8)) of
                                    {'EXIT', _} ->
                                        case (catch list_to_existing_atom(BinType)) of
                                            {'EXIT', _} -> AtomTypes;
