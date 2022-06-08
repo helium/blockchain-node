@@ -20,3 +20,6 @@ rebar3.crashdump
 data/
 .env
 .envrc
+
+# gpb auto-generatd erl modules
+src/grpc/
