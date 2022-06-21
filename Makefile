@@ -91,3 +91,8 @@ docker-stop:
 
 docs:
 	$(MAKE) -C docs
+
+update-genesis:
+	curl -o priv/genesis https://snapshots.helium.wtf/genesis.mainnet
+	curl -o priv/genesis_testnet https://snapshots.helium.wtf/genesis.testnet
+	curl -o priv/genesis_devnet https://snapshots.helium.wtf/genesis.devnet
