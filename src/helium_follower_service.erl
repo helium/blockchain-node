@@ -49,8 +49,9 @@ handle_info({blockchain_event, {add_block, BlockHash, _Sync, _Ledger}}, StreamSt
     case blockchain:get_block(BlockHash, Chain) of
         {ok, Block} ->
             Height = blockchain_block:height(Block),
+            Timestamp = blockchain_block:time(Block),
             SortedTxns = filter_hash_sort_txns(Block, TxnTypes),
-            _NewStreamState = send_txn_sequence(SortedTxns, Height, StreamState);
+            _NewStreamState = send_txn_sequence(SortedTxns, Height, Timestamp, StreamState);
         _ ->
             lager:error("failed to find block with hash: ~p", [BlockHash]),
             StreamState
@@ -132,14 +133,16 @@ process_past_blocks(Height, TxnHash, TxnTypes, Chain, StreamState) when is_integ
                            StreamState :: grpcbox_stream:t()) -> {ok, grpcbox_stream:t()}.
 process_past_blocks_(StartBlock, TxnHash, TxnTypes, HeadHeight, Chain, StreamState) ->
     StartHeight = blockchain_block:height(StartBlock),
+    StartBlockTimestamp = blockchain_block:time(StartBlock),
     SortedStartTxns = filter_hash_sort_txns(StartBlock, TxnTypes),
     {UnhandledTxns, _} = lists:partition(fun({H, _T}) -> H > TxnHash end, SortedStartTxns),
-    StreamState1 = send_txn_sequence(UnhandledTxns, StartHeight, StreamState),
+    StreamState1 = send_txn_sequence(UnhandledTxns, StartHeight, StartBlockTimestamp, StreamState),
     BlockSeq = lists:seq(StartHeight + 1, HeadHeight),
     StreamState2 = lists:foldl(fun(HeightX, StateAcc) ->
                                    {ok, BlockX} = blockchain:get_block(HeightX, Chain),
+                                   BlockXTimestamp = blockchain_block:time(BlockX),
                                    SortedTxnsX = filter_hash_sort_txns(BlockX, TxnTypes),
-                                   _NewStateAcc = send_txn_sequence(SortedTxnsX, HeightX, StateAcc)
+                                   _NewStateAcc = send_txn_sequence(SortedTxnsX, HeightX, BlockXTimestamp, StateAcc)
                                end, StreamState1, BlockSeq),
     {ok, StreamState2}.
 
@@ -153,20 +156,21 @@ filter_hash_sort_txns(Block, TxnTypes) ->
 -spec send_txn_sequence(SortedTxns :: [{binary(), blockchain_txn:txn()}],
                         Height :: pos_integer(),
                         StreamState :: grpcbox_stream:t()) -> grpcbox_stream:t().
-send_txn_sequence(SortedTxns, Height, StreamState) ->
+send_txn_sequence(SortedTxns, Height, Timestamp, StreamState) ->
     lists:foldl(fun({TxnHash, Txn}, StateAcc) ->
-                    Msg = encode_follower_resp(TxnHash, Txn, Height),
+                    Msg = encode_follower_resp(TxnHash, Txn, Height, Timestamp),
                     grpcbox_stream:send(false, Msg, StateAcc)
                 end, StreamState, SortedTxns).
 
 -spec encode_follower_resp(TxnHash :: binary(),
                            Txn :: blockchain_txn:txn(),
                            TxnHeight :: pos_integer()) -> follower_pb:follower_resp_v1_pb().
-encode_follower_resp(TxnHash, Txn, TxnHeight) ->
+encode_follower_resp(TxnHash, Txn, TxnHeight, Timestamp) ->
     #follower_txn_stream_resp_v1_pb{
         height = TxnHeight,
         txn_hash = TxnHash,
-        txn = blockchain_txn:wrap_txn(Txn)
+        txn = blockchain_txn:wrap_txn(Txn),
+        timestamp = Timestamp
     }.
 
 subscribed_type(_Type, []) -> true;
