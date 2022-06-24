@@ -155,6 +155,7 @@ filter_hash_sort_txns(Block, TxnTypes) ->
 
 -spec send_txn_sequence(SortedTxns :: [{binary(), blockchain_txn:txn()}],
                         Height :: pos_integer(),
+                        Timestamp :: pos_integer(),
                         StreamState :: grpcbox_stream:t()) -> grpcbox_stream:t().
 send_txn_sequence(SortedTxns, Height, Timestamp, StreamState) ->
     lists:foldl(fun({TxnHash, Txn}, StateAcc) ->
@@ -164,7 +165,8 @@ send_txn_sequence(SortedTxns, Height, Timestamp, StreamState) ->
 
 -spec encode_follower_resp(TxnHash :: binary(),
                            Txn :: blockchain_txn:txn(),
-                           TxnHeight :: pos_integer()) -> follower_pb:follower_resp_v1_pb().
+                           TxnHeight :: pos_integer(),
+                           Timestamp :: pos_integer()) -> follower_pb:follower_resp_v1_pb().
 encode_follower_resp(TxnHash, Txn, TxnHeight, Timestamp) ->
     #follower_txn_stream_resp_v1_pb{
         height = TxnHeight,
