@@ -2,13 +2,17 @@
 
 set -euo pipefail
 
-VERSION=$VERSION_TAG
+BUILD_NET="${BUILD_NET:-mainnet}"
+PKG_STEM="${PKG_STEM:-blockchain-node}"
 
-PKGNAME="blockchain-node_${VERSION}_amd64.deb"
+VERSION=$( echo $VERSION_TAG | sed -e "s,${BUILD_NET},," )
+
+PKGNAME="${PKGSTEM}_${VERSION}_amd64.deb"
+REPO=$( echo $PKGSTEM | sed -e "s,-,_," )
 
 buildkite-agent artifact download ${PKGNAME} .
 
 curl -u "${PACKAGECLOUD_API_KEY}:" \
-     -F "package[distro_version_id]=190" \
+     -F "package[distro_version_id]=210" \
      -F "package[package_file]=@${PKGNAME}" \
-     https://packagecloud.io/api/v1/repos/helium/blockchain_node/packages.json
+     https://packagecloud.io/api/v1/repos/helium/${REPO}/packages.json
