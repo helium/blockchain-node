@@ -3,7 +3,7 @@
 set -euo pipefail
 
 BUILD_NET="${BUILD_NET:-mainnet}"
-PKG_STEM="${PKG_STEM:-blockchain-node}"
+PKGSTEM="${PKGSTEM:-blockchain-node}"
 
 VERSION=$( echo $VERSION_TAG | sed -e "s,${BUILD_NET},," )
 
