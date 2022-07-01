@@ -8,7 +8,7 @@ PKGSTEM="${PKGSTEM:-blockchain-node}"
 VERSION=$( echo $VERSION_TAG | sed -e "s,${BUILD_NET},," )
 
 PKGNAME="${PKGSTEM}_${VERSION}_amd64.deb"
-REPO=$( echo $PKGSTEM | sed -e "s,-,_," )
+REPO=$( echo $PKGSTEM | sed -e "s,-,_,g" )
 
 buildkite-agent artifact download ${PKGNAME} .
 
