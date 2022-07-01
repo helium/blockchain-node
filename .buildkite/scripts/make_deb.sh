@@ -4,7 +4,7 @@ set -euo pipefail
 
 BUILD_NET="${BUILD_NET:-mainnet}"
 RELEASE_TARGET="${RELEASE_TARGET:-prod}"
-PKG_STEM="${PKG_STEM:-blockchain-node}"
+PKGSTEM="${PKGSTEM:-blockchain-node}"
 
 VERSION=$( echo $VERSION_TAG | sed -e "s,${BUILD_NET},," )
 
@@ -12,7 +12,7 @@ DIAGNOSTIC=1 ./rebar3 as ${RELEASE_TARGET} release -v ${VERSION} -n blockchain_n
 
 wget -O /tmp/genesis https://snapshots.helium.wtf/genesis.${BUILD_NET}
 
-fpm -n ${PKG_STEM} \
+fpm -n ${PKGSTEM} \
     -v "${VERSION}" \
     -s dir \
     -t deb \
