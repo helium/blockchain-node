@@ -63,7 +63,7 @@ steps:
     agents:
       queue: "erlang"
 
-  - if: build.tag != null && build.tag != /^devnet/ && build.tag != /^testnet/
+  - if: build.tag != null && build.tag !~ /^devnet/ && build.tag !~ /^testnet/
     label: ":debian: build deb"
     env:
       VERSION_TAG: $BUILDKITE_TAG
@@ -75,7 +75,7 @@ steps:
     agents:
       queue: "erlang"
 
-  - if: build.tag != null && build.tag != /^devnet/ && build.tag != /^testnet/
+  - if: build.tag != null && build.tag !~ /^devnet/ && build.tag !~ /^testnet/
     label: "upload"
     name: ":cloud: upload to packagecloud"
     env:
@@ -86,7 +86,7 @@ steps:
     agents:
       queue: "erlang"
 
-  - if: build.tag != null && build.tag != /^devnet/ && build.tag != /^testnet/
+  - if: build.tag != null && build.tag !~ /^devnet/ && build.tag !~ /^testnet/
     label: "prod docker"
     name: ":whale: build docker prod image"
     env:
