@@ -8,6 +8,8 @@ APP_VERSION=$$(git tag --points-at HEAD)
 OS_NAME=$(shell uname -s)
 PROFILE ?= dev
 
+grpc_services_directory=src/grpc/autogen
+
 ifeq (${OS_NAME},FreeBSD)
 make="gmake"
 else
@@ -21,6 +23,7 @@ shell:
 	$(REBAR) shell
 
 clean:
+	rm -rf $(grpc_services_directory)
 	$(REBAR) clean
 
 cover:
@@ -37,6 +40,18 @@ typecheck:
 
 doc:
 	$(REBAR) edoc
+
+grpc: | $(grpc_services_directory)
+	@echo "generating grpc services"
+	REBAR_CONFIG="config/grpc_server_gen.config" $(REBAR) grpc gen
+
+clean_grpc:
+	@echo "cleaning grpc services"
+	rm -rf $(grpc_services_directory)
+
+$(grpc_services_directory):
+	@echo "grpc service directory $(directory) does not exist"
+	$(REBAR) get-deps
 
 release:
 	$(REBAR) as $(PROFILE) do release
@@ -76,3 +91,8 @@ docker-stop:
 
 docs:
 	$(MAKE) -C docs
+
+update-genesis:
+	curl -o priv/genesis https://snapshots.helium.wtf/genesis.mainnet
+	curl -o priv/genesis_testnet https://snapshots.helium.wtf/genesis.testnet
+	curl -o priv/genesis_devnet https://snapshots.helium.wtf/genesis.devnet

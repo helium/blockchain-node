@@ -7,30 +7,86 @@ steps:
     agents:
       queue: "erlang"
 
-  - if: build.tag != null && build.tag !~ /^otp/
+  - if: build.tag =~ /^testnet/
+    label: ":debian: build deb"
+    env:
+      BUILD_NET: "testnet"
+      PKGSTEM: "testnet-blockchain-node"
+      RELEASE_TARGET: "dev_testnet"
+      VERSION_TAG: $BUILDKITE_TAG
+    commands:
+      - "git tag $BUILDKITE_TAG"
+      - ".buildkite/scripts/make_deb.sh"
+    key: "test-deb"
+    artifact_paths: "*.deb"
+    agents:
+      queue: "erlang"
+
+  - if: build.tag =~ /^testnet/
+    label: "upload"
+    name: ":cloud: upload to packagecloud"
+    env:
+      BUILD_NET: "testnet"
+      PKGSTEM: "testnet-blockchain-node"
+      VERSION_TAG: $BUILDKITE_TAG
+    commands:
+      - ".buildkite/scripts/packagecloud_upload.sh"
+    depends_on: "test-deb"
+    agents:
+      queue: "erlang"
+
+  - if: build.tag =~ /^devnet/
+    label: ":debian: build deb"
+    env:
+      BUILD_NET: "devnet"
+      RELEASE_TARGET: "devnet"
+      PKGSTEM: "devnet-blockchain-node"
+      VERSION_TAG: $BUILDKITE_TAG
+    commands:
+      - "git tag $BUILDKITE_TAG"
+      - ".buildkite/scripts/make_deb.sh devnet"
+    key: "dev-deb"
+    artifact_paths: "*.deb"
+    agents:
+      queue: "erlang"
+
+  - if: build.tag =~ /^devnet/
+    label: "upload"
+    name: ":cloud: upload to packagecloud"
+    env:
+      BUILD_NET: "devnet"
+      PKGSTEM: "devnet-blockchain-node"
+      VERSION_TAG: $BUILDKITE_TAG
+    commands:
+      - ".buildkite/scripts/packagecloud_upload.sh"
+    depends_on: "dev-deb"
+    agents:
+      queue: "erlang"
+
+  - if: build.tag != null && build.tag !~ /^devnet/ && build.tag !~ /^testnet/
     label: ":debian: build deb"
     env:
       VERSION_TAG: $BUILDKITE_TAG
     commands:
       - "git tag $BUILDKITE_TAG"
       - ".buildkite/scripts/make_deb.sh prod"
-    key: "deb"
+    key: "prod-deb"
     artifact_paths: "*.deb"
     agents:
       queue: "erlang"
 
-  - if: build.tag != null && build.tag !~ /^otp/
+  - if: build.tag != null && build.tag !~ /^devnet/ && build.tag !~ /^testnet/
     label: "upload"
     name: ":cloud: upload to packagecloud"
     env:
       VERSION_TAG: $BUILDKITE_TAG
     commands:
       - ".buildkite/scripts/packagecloud_upload.sh"
-    depends_on: "deb"
+    depends_on: "prod-deb"
     agents:
       queue: "erlang"
 
-  - if: build.tag != null && build.tag !~ /^otp/
+  - if: build.tag != null && build.tag !~ /^devnet/ && build.tag !~ /^testnet/
     label: "prod docker"
     name: ":whale: build docker prod image"
     env:

@@ -16,5 +16,6 @@
   {blockchain,
   [
    {base_dir, "/var/data"}
-  ]}
+  ]},
+  "etc/node.config"
 ].

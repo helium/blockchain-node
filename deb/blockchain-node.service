@@ -4,13 +4,13 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/var/helium/blockchain_node/bin/blockchain_node foreground
-ExecStop=/var/helium/blockchain_node/bin/blockchain_node stop
-User=ubuntu
-PIDFile=/var/data/blockchain_node/blockchain_node.pid
-Environment=HOME="/var/data/blockchain_node"
-Environment=RUNNER_LOG_DIR="/var/data/log/blockchain_node"
-Environment=ERL_CRASH_DUMP="/var/data/log/blockchain_node"
+ExecStart=/opt/blockchain_node/bin/blockchain_node foreground
+ExecStop=/opt/blockchain_node/bin/blockchain_node stop
+User=helium
+PIDFile=/var/blockchain_node/blockchain_node.pid
+Environment=HOME="/opt/blockchain_node"
+Environment=RUNNER_LOG_DIR="/opt/blockchain_node/log/blockchain_node"
+Environment=ERL_CRASH_DUMP="/opt/blockchain_node/log/blockchain_node"
 LimitNOFILE=200000
 LimitNPROC=200000
 Restart=always
