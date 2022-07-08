@@ -12,6 +12,14 @@ DIAGNOSTIC=1 ./rebar3 as ${RELEASE_TARGET} release -v ${VERSION} -n blockchain_n
 
 wget -O /tmp/genesis https://snapshots.helium.wtf/genesis.${BUILD_NET}
 
+if [ ! -d /opt/blockchain_node/etc ]; then
+    mkdir -p /opt/blockchain_node/etc
+fi
+
+if [ ! -f /opt/blockchain_node/etc/node.config ]; then
+    touch /opt/blockchain_node/etc/node.config
+fi
+
 fpm -n ${PKGSTEM} \
     -v "${VERSION}" \
     -s dir \
@@ -33,6 +41,7 @@ fpm -n ${PKGSTEM} \
     --deb-systemd-restart-after-upgrade \
     --deb-user helium \
     --deb-group helium \
+    --config-files /opt/blockchain_node/etc/node.config \
     _build/${RELEASE_TARGET}/rel/=/opt \
     /tmp/genesis=/opt/miner/update/genesis
 
