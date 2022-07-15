@@ -45,7 +45,7 @@ find_gateway(Ctx, Req) ->
         {ok, GwInfo} ->
             Location = case blockchain_ledger_gateway_v2:location(GwInfo) of
                            undefined -> <<>>;
-                           H3 -> list_to_binary(io_lib:format("~16b", [H3]))
+                           H3 -> h3:to_string(H3)
                        end,
             {ok, #follower_gateway_resp_v1_pb{height=Height, address = PubKeyBin, location=Location,
                                       owner = blockchain_ledger_gateway_v2:owner_address(GwInfo)}, Ctx};
