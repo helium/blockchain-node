@@ -10,7 +10,7 @@
 -include("grpc/autogen/server/follower_pb.hrl").
 -include_lib("blockchain/include/blockchain.hrl").
 
--export([txn_stream/2]).
+-export([txn_stream/2, find_gateway/2]).
 
 -export([init/2, handle_info/2]).
 
@@ -34,6 +34,25 @@ txn_stream(#follower_txn_stream_req_v1_pb{} = Msg, StreamState) ->
 txn_stream(_Msg, StreamState) ->
     lager:warning("unhandled grpc msg ~p", [_Msg]),
     {ok, StreamState}.
+
+-spec find_gateway(ctx:ctx(), follower_pb:follower_gateway_req_v1_pb()) ->
+    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()}. % | grpcbox_stream:grpc_error_response().
+find_gateway(Ctx, Req) ->
+    Ledger = blockchain:ledger(),
+    PubKeyBin = Req#follower_gateway_req_v1_pb.address,
+    {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
+    case blockchain_ledger_v1:find_gateway_info(PubKeyBin, Ledger) of
+        {ok, GwInfo} ->
+            Location = case blockchain_ledger_gateway_v2:location(GwInfo) of
+                           undefined -> <<>>;
+                           H3 -> h3:to_string(H3)
+                       end,
+            {ok, #follower_gateway_resp_v1_pb{height=Height, address = PubKeyBin, location=Location,
+                                      owner = blockchain_ledger_gateway_v2:owner_address(GwInfo)}, Ctx};
+        _ ->
+            {ok, #follower_gateway_resp_v1_pb{height=Height, address = PubKeyBin, location = <<>>,
+                                      owner = <<>>}, Ctx}
+    end.
 
 -spec init(atom(), grpcbox_stream:t()) -> grpcbox_stream:t().
 init(_RPC, StreamState) ->
