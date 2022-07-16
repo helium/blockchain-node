@@ -97,26 +97,21 @@ txn_stream(
 ) ->
     lager:debug("subscribing client to txn stream with msg ~p", [_Msg]),
     ok = blockchain_event:add_handler(self()),
-    TxnTypes = lists:foldl(fun(BinType, AtomTypes) ->
-                               case (catch binary_to_existing_atom(BinType, utf8)) of
-                                   {'EXIT', _} ->
-                                       case (catch list_to_existing_atom(BinType)) of
-                                           {'EXIT', _} -> AtomTypes;
-                                           ListToAtom when is_atom(ListToAtom) -> [ListToAtom | AtomTypes]
-                                       end;
-                                   AtomType when is_atom(AtomType) -> [AtomType | AtomTypes]
-                               end
-                           end, [], TxnTypes0),
-    case process_past_blocks(Height, Hash, TxnTypes, Chain, StreamState) of
-        {ok, StreamState1} ->
-            HandlerState = grpcbox_stream:stream_handler_state(StreamState1),
-            StreamState2 = grpcbox_stream:stream_handler_state(
-                               StreamState1,
-                               HandlerState#{streaming_initialized => true, txn_types => TxnTypes}
-                           ),
-            {ok, StreamState2};
-        {error, _} ->
-            {grpc_error, {grpcbox_stream:code_to_status(5), <<"requested block not found">>}}
+    case validate_txn_filters(TxnTypes0) of
+        {error, invalid_filters} ->
+            {grpc_error, {grpcbox_stream:code_to_status(3), <<"invalid txn filter">>}};
+        {ok, TxnTypes} ->
+            case process_past_blocks(Height, Hash, TxnTypes, Chain, StreamState) of
+                {ok, StreamState1} ->
+                    HandlerState = grpcbox_stream:stream_handler_state(StreamState1),
+                    StreamState2 = grpcbox_stream:stream_handler_state(
+                                    StreamState1,
+                                    HandlerState#{streaming_initialized => true, txn_types => TxnTypes}
+                                ),
+                    {ok, StreamState2};
+                {error, _} ->
+                    {grpc_error, {grpcbox_stream:code_to_status(5), <<"requested block not found">>}}
+            end
     end.
 
 -spec process_past_blocks(Height      :: pos_integer() | undefined,
@@ -196,3 +191,22 @@ encode_follower_resp(TxnHash, Txn, TxnHeight, Timestamp) ->
 
 subscribed_type(_Type, []) -> true;
 subscribed_type(Type, FilterTypes) -> lists:member(Type, FilterTypes).
+
+validate_txn_filters(TxnFilters0) ->
+    case (catch lists:foldl(fun(BinType, AtomTypes) when is_binary(BinType) ->
+                    [binary_to_existing_atom(BinType, utf8) | AtomTypes];
+                (BinType, AtomTypes) when is_list(BinType) ->
+                    [list_to_existing_atom(BinType) | AtomTypes]
+                end, [], TxnFilters0)) of
+        {'EXIT', _} ->
+            {error, invalid_filter};
+        TxnFilters when is_list(TxnFilters) ->
+            case lists:all(fun is_blockchain_txn/1, TxnFilters) of
+                true -> {ok, TxnFilters};
+                false -> {error, invalid_filters}
+            end
+    end.
+
+is_blockchain_txn(Module) ->
+    ModInfo = Module:module_info(attributes),
+    lists:any(fun({behavior, [blockchain_txn]}) -> true; (_) -> false end, ModInfo).
