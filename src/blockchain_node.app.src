@@ -21,7 +21,10 @@
      observer_cli,
      clique,
      recon,
-     grpcbox
+     grpcbox,
+     elli,
+     telemetry,
+     prometheus
     ]
    },
    {included_applications, [blockchain]},
