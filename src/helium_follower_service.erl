@@ -109,18 +109,18 @@ txn_stream(
                                     HandlerState#{streaming_initialized => true, txn_types => TxnTypes}
                                 ),
                     {ok, StreamState2};
+                {error, invalid_req_params} ->
+                    {grpc_error, {grpcbox_stream:code_to_status(3), <<"invalid starting height, txn hash, or filter">>}};
                 {error, _} ->
                     {grpc_error, {grpcbox_stream:code_to_status(5), <<"requested block not found">>}}
             end
     end.
 
--spec process_past_blocks(Height      :: pos_integer() | undefined,
+-spec process_past_blocks(Height      :: pos_integer(),
                           TxnHash     :: binary(),
                           TxnTypes    :: [atom()],
                           Chain       :: blockchain:blockchain(),
                           StreamState :: grpcbox_stream:t()) -> {ok, grpcbox_stream:t()} | {error, term()}.
-process_past_blocks(undefined = _Height, _TxnHash, _TxnTypes, _Chain, StreamState) ->
-    {ok, StreamState};
 process_past_blocks(Height, TxnHash, TxnTypes, Chain, StreamState) when is_integer(Height) andalso Height > 0 ->
     {ok, #block_info_v2{height = HeadHeight}} = blockchain:head_block_info(Chain),
     case Height > HeadHeight of
@@ -137,7 +137,8 @@ process_past_blocks(Height, TxnHash, TxnTypes, Chain, StreamState) when is_integ
                         {error, _} = Error -> Error
                     end
             end
-    end.
+    end;
+process_past_blocks(_Height, _TxnHash, _TxnTypes, _Chain, _StreamState) -> {error, invalid_req_params}.
 
 -spec process_past_blocks_(StartBlock  :: blockchain_block:block(),
                            TxnHash     :: binary(),
