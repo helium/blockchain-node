@@ -178,7 +178,7 @@ handle_rpc(<<"wallet_pay">>, {Param}) ->
     Chain = blockchain_worker:blockchain(),
     Nonce = jsonrpc_nonce_param(Param, Payer, balance, Chain),
 
-    {ok, Txn} = mk_payment_txn_v1(Payer, Payee, Amount, Nonce, Chain),
+    {ok, Txn} = mk_payment_txn_v2(Payer, [{Payee, Amount}], Nonce, Chain),
     case sign(Payer, Txn) of
         {ok, SignedTxn} ->
             {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
@@ -318,19 +318,6 @@ jsonrpc_nonce_param(Param, Address, NonceType, Chain) ->
         _ ->
             ?jsonrpc_error({invalid_params, Param})
     end.
-
--spec mk_payment_txn_v1(
-    Payer :: libp2p_crypto:pubkey_bin(),
-    Payee :: libp2p_crypto:pubkey_bin(),
-    Bones :: pos_integer(),
-    Nonce :: non_neg_integer(),
-    Chain :: blockchain:blockchain()
-) ->
-    {ok, blockchain_txn:txn()} | {error, term()}.
-mk_payment_txn_v1(Payer, Payee, Amount, Nonce, Chain) ->
-    Txn = blockchain_txn_payment_v1:new(Payer, Payee, Amount, Nonce),
-    TxnFee = blockchain_txn_payment_v1:calculate_fee(Txn, Chain),
-    {ok, blockchain_txn_payment_v1:fee(Txn, TxnFee)}.
 
 -spec mk_payment_txn_v2(
     Payer :: libp2p_crypto:pubkey_bin(),
