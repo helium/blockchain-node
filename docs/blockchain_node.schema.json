@@ -339,6 +339,16 @@
             "description": "HNT balance of the account in bones",
             "example": 1000
           },
+          "mobile_balance": {
+            "type": "number",
+            "description": "MOBILE balance of the account in bones",
+            "example": 1000
+          },
+          "iot_balance": {
+            "type": "number",
+            "description": "IOT balance of the account in bones",
+            "example": 1000
+          },
           "nonce": {
             "type": "number",
             "description": "The current nonce for the account",
@@ -346,7 +356,7 @@
           },
           "speculative_nonce": {
             "type": "number",
-            "description": "The larger of the maximum pending balance nonce or the current nonce.",
+            "description": "The larger of the maximum pending balance nonce or the current nonce",
             "example": 12
           },
           "dc_balance": {
@@ -366,12 +376,12 @@
           },
           "sec_nonce": {
             "type": "number",
-            "description": "The current security token nonce for the account",
+            "description": "The current security token nonce for the account (deprecated).",
             "example": 0
           },
           "sec_speculative_nonce": {
             "type": "number",
-            "description": "The larger of the maximum pending security nonce or the current security token nonce for the account",
+            "description": "The larger of the maximum pending security nonce or the current security token nonce for the account (deprecated)",
             "example": 0
           }
         },
@@ -383,8 +393,8 @@
           "dc_balance",
           "dc_nonce",
           "sec_balance",
-          "sec_nonce",
-          "sec_speculative_nonce"
+          "iot_balance",
+          "mobile_balance"
         ]
       }
     },
