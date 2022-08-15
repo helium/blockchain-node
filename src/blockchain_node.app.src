@@ -14,14 +14,16 @@
      compiler,
      lager,
      jsone,
-     elli,
      jsonrpc2,
      base64url,
      pbkdf2,
      observer_cli,
      clique,
      recon,
-     grpcbox
+     grpcbox,
+     elli,
+     telemetry,
+     prometheus
     ]
    },
    {included_applications, [blockchain]},

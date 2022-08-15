@@ -93,7 +93,8 @@ init([]) ->
                 [{follower_module, {bn_oracle_price, [{base_dir, BaseDir}]}}]
             ]),
             ?WORKER(bn_wallets, [[{base_dir, BaseDir}]]),
-            ?WORKER(elli, [[{callback, bn_jsonrpc_handler}, {port, NodePort}]])
+            ?WORKER(elli, [[{callback, bn_jsonrpc_handler}, {port, NodePort}]]),
+            ?WORKER(bn_metrics_server, [])
         ]}}.
 
 random_val_predicate(Peer) ->
