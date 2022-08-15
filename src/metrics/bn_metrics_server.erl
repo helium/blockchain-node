@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--include("metrics/metrics.hrl").
+-include("metrics.hrl").
 
 -export([
     handle_metric/4,
@@ -51,13 +51,13 @@ start_link() ->
 init(_Args) ->
     case get_configs() of
         {[], []} -> ignore;
-        {[_ | _], [_ | _]} = Metrics ->
+        {[_ | _], [_ | _] = Metrics} = MetricConfigs ->
             erlang:process_flag(trap_exit, true),
 
-            ok = setup_metrics(Metrics),
+            ok = setup_metrics(MetricConfigs),
 
             ElliOpts = [
-                {callback, be_metrics_exporter},
+                {callback, bn_metrics_exporter},
                 {callback_args, #{}},
                 {port, application:get_env(blockchain_node, metrics_port, 9090)}
             ],
@@ -97,7 +97,7 @@ terminate(Reason, #state{metrics = Metrics, exporter_pid = Exporter}) ->
     ).
 
 setup_metrics({EventNames, EventSpecs}) ->
-    lager:warning("METRICS ~p", [EventSpecs]),
+    lager:info("METRICS ~p", [EventSpecs]),
     lists:foreach(
         fun({Metric, Module, Meta, Description}) ->
             lager:info("Declaring metric ~p as ~p meta=~p", [Metric, Module, Meta]),

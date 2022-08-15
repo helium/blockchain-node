@@ -14,7 +14,6 @@
      compiler,
      lager,
      jsone,
-     elli,
      jsonrpc2,
      base64url,
      pbkdf2,
