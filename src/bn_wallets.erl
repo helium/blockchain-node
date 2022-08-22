@@ -333,7 +333,7 @@ mk_payment_txn_v2(Payer, PaymentList, Nonce, Chain) ->
     TxnFee = blockchain_txn_payment_v2:calculate_fee(Txn, Chain),
     {ok, blockchain_txn_payment_v2:fee(Txn, TxnFee)}.
 
-mk_payment(Payee, _Bones, true) ->
+mk_payment(Payee, undefined, true) ->
     blockchain_payment_v2:new(Payee, max);
 mk_payment(Payee, Bones, false) ->
     blockchain_payment_v2:new(Payee, Bones).
