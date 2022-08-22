@@ -174,11 +174,12 @@ handle_rpc(<<"wallet_is_locked">>, {Param}) ->
 handle_rpc(<<"wallet_pay">>, {Param}) ->
     Payer = ?jsonrpc_b58_to_bin(<<"address">>, Param),
     Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Param),
-    Amount = ?jsonrpc_get_param(<<"bones">>, Param),
+    Amount = ?jsonrpc_get_param(<<"bones">>, Param, undefined),
+    Max = ?jsonrpc_get_param(<<"max">>, Param, false),
     Chain = blockchain_worker:blockchain(),
     Nonce = jsonrpc_nonce_param(Param, Payer, balance, Chain),
 
-    {ok, Txn} = mk_payment_txn_v2(Payer, [{Payee, Amount}], Nonce, Chain),
+    {ok, Txn} = mk_payment_txn_v2(Payer, [{Payee, Amount, Max}], Nonce, Chain),
     case sign(Payer, Txn) of
         {ok, SignedTxn} ->
             {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
@@ -327,10 +328,15 @@ jsonrpc_nonce_param(Param, Address, NonceType, Chain) ->
 ) ->
     {ok, blockchain_txn:txn()} | {error, term()}.
 mk_payment_txn_v2(Payer, PaymentList, Nonce, Chain) ->
-    Payments = [blockchain_payment_v2:new(Payee, Bones) || {Payee, Bones} <- PaymentList],
+    Payments = [mk_payment(Payee, Bones, Max) || {Payee, Bones, Max} <- PaymentList],
     Txn = blockchain_txn_payment_v2:new(Payer, Payments, Nonce),
     TxnFee = blockchain_txn_payment_v2:calculate_fee(Txn, Chain),
     {ok, blockchain_txn_payment_v2:fee(Txn, TxnFee)}.
+
+mk_payment(Payee, _Bones, true) ->
+    blockchain_payment_v2:new(Payee, max);
+mk_payment(Payee, Bones, false) ->
+    blockchain_payment_v2:new(Payee, Bones).
 
 get_state() ->
     case persistent_term:get(?MODULE, false) of
