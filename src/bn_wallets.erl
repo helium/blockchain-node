@@ -195,8 +195,9 @@ handle_rpc(<<"wallet_pay_multi">>, {Param}) ->
                 lists:map(
                     fun(Entry) ->
                         Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Entry),
-                        Amount = ?jsonrpc_get_param(<<"bones">>, Entry),
-                        {Payee, Amount}
+                        Amount = ?jsonrpc_get_param(<<"bones">>, Entry, undefined),
+                        Max = ?jsonrpc_get_param(<<"max">>, Entry, false),
+                        {Payee, Amount, Max}
                     end,
                     L
                 );
@@ -322,7 +323,7 @@ jsonrpc_nonce_param(Param, Address, NonceType, Chain) ->
 
 -spec mk_payment_txn_v2(
     Payer :: libp2p_crypto:pubkey_bin(),
-    [{Payee :: libp2p_crypto:pubkey_bin(), Bones :: pos_integer()}],
+    [{Payee :: libp2p_crypto:pubkey_bin(), Bones :: pos_integer() | undefined, Max :: boolean()}],
     Nonce :: non_neg_integer(),
     Chain :: blockchain:blockchain()
 ) ->
