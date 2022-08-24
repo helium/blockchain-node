@@ -179,13 +179,17 @@ handle_rpc(<<"wallet_pay">>, {Param}) ->
     Chain = blockchain_worker:blockchain(),
     Nonce = jsonrpc_nonce_param(Param, Payer, balance, Chain),
 
-    {ok, Txn} = mk_payment_txn_v2(Payer, [{Payee, Amount, Max}], Nonce, Chain),
-    case sign(Payer, Txn) of
-        {ok, SignedTxn} ->
-            {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
-            blockchain_txn:to_json(SignedTxn, []);
-        {error, not_found} ->
-            ?jsonrpc_error({not_found, "Wallet is locked"})
+    case mk_payment_txn_v2(Payer, [{Payee, Amount, Max}], Nonce, Chain) of
+        {ok, Txn} ->
+            case sign(Payer, Txn) of
+                {ok, SignedTxn} ->
+                    {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
+                    blockchain_txn:to_json(SignedTxn, []);
+                {error, not_found} ->
+                    ?jsonrpc_error({not_found, "Wallet is locked"})
+            end;
+        {error, invalid_payment} ->
+            ?jsonrpc_error({invalid_params, "Missing or invalid payment amount"})
     end;
 handle_rpc(<<"wallet_pay_multi">>, {Param}) ->
     Payer = ?jsonrpc_b58_to_bin(<<"address">>, Param),
@@ -208,12 +212,17 @@ handle_rpc(<<"wallet_pay_multi">>, {Param}) ->
     Nonce = jsonrpc_nonce_param(Param, Payer, balance, Chain),
 
     {ok, Txn} = mk_payment_txn_v2(Payer, Payments, Nonce, Chain),
-    case sign(Payer, Txn) of
-        {ok, SignedTxn} ->
-            {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
-            blockchain_txn:to_json(SignedTxn, []);
-        {error, not_found} ->
-            ?jsonrpc_error({not_found, "Wallet is locked"})
+    case mk_payment_txn_v2(Payer, Payments, Nonce, Chain) of
+        {ok, Txn} ->
+            case sign(Payer, Txn) of
+                {ok, SignedTxn} ->
+                    {ok, _} = bn_pending_txns:submit_txn(SignedTxn),
+                    blockchain_txn:to_json(SignedTxn, []);
+                {error, not_found} ->
+                    ?jsonrpc_error({not_found, "Wallet is locked"})
+            end;
+        {error, invalid_payment} ->
+            ?jsonrpc_error({invalid_params, "Missing or invalid payment amount(s)"})
     end;
 handle_rpc(<<"wallet_import">>, {Param}) ->
     Password = ?jsonrpc_get_param(<<"password">>, Param),
@@ -329,10 +338,14 @@ jsonrpc_nonce_param(Param, Address, NonceType, Chain) ->
 ) ->
     {ok, blockchain_txn:txn()} | {error, term()}.
 mk_payment_txn_v2(Payer, PaymentList, Nonce, Chain) ->
-    Payments = [mk_payment(Payee, Bones, Max) || {Payee, Bones, Max} <- PaymentList],
-    Txn = blockchain_txn_payment_v2:new(Payer, Payments, Nonce),
-    TxnFee = blockchain_txn_payment_v2:calculate_fee(Txn, Chain),
-    {ok, blockchain_txn_payment_v2:fee(Txn, TxnFee)}.
+    try
+        Payments = [mk_payment(Payee, Bones, Max) || {Payee, Bones, Max} <- PaymentList],
+        Txn = blockchain_txn_payment_v2:new(Payer, Payments, Nonce),
+        TxnFee = blockchain_txn_payment_v2:calculate_fee(Txn, Chain),
+        {ok, blockchain_txn_payment_v2:fee(Txn, TxnFee)}
+    catch
+        _:_ -> {error, invalid_payment}
+    end.
 
 mk_payment(Payee, undefined, true) ->
     blockchain_payment_v2:new(Payee, max);
