@@ -10,7 +10,7 @@
 -include("grpc/autogen/server/follower_pb.hrl").
 -include_lib("blockchain/include/blockchain.hrl").
 
--export([txn_stream/2, find_gateway/2]).
+-export([txn_stream/2, find_gateway/2, subnetwork_last_reward_height/2]).
 
 -export([init/2, handle_info/2]).
 
@@ -36,23 +36,16 @@ txn_stream(_Msg, StreamState) ->
     {ok, StreamState}.
 
 -spec find_gateway(ctx:ctx(), follower_pb:follower_gateway_req_v1_pb()) ->
-    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()}. % | grpcbox_stream:grpc_error_response().
+    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
 find_gateway(Ctx, Req) ->
-    Ledger = blockchain:ledger(),
-    PubKeyBin = Req#follower_gateway_req_v1_pb.address,
-    {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
-    case blockchain_ledger_v1:find_gateway_info(PubKeyBin, Ledger) of
-        {ok, GwInfo} ->
-            Location = case blockchain_ledger_gateway_v2:location(GwInfo) of
-                           undefined -> <<>>;
-                           H3 -> h3:to_string(H3)
-                       end,
-            {ok, #follower_gateway_resp_v1_pb{height=Height, address = PubKeyBin, location=Location,
-                                      owner = blockchain_ledger_gateway_v2:owner_address(GwInfo)}, Ctx};
-        _ ->
-            {ok, #follower_gateway_resp_v1_pb{height=Height, address = PubKeyBin, location = <<>>,
-                                      owner = <<>>}, Ctx}
-    end.
+    Chain = blockchain_worker:cached_blockchain(),
+    find_gateway(Chain, Ctx, Req).
+
+-spec subnetwork_last_reward_height(ctx:ctx(), follower_pb:follower_subnetwork_last_reward_height_req_v1_pb()) ->
+    {ok, follower_pb:follower_subnetwork_last_reward_height_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+subnetwork_last_reward_height(Ctx, Req) ->
+    Chain = blockchain_worker:cached_blockchain(),
+    subnetwork_last_reward_height(Chain, Ctx, Req).
 
 -spec init(atom(), grpcbox_stream:t()) -> grpcbox_stream:t().
 init(_RPC, StreamState) ->
@@ -114,6 +107,44 @@ txn_stream(
                 {error, _} ->
                     {grpc_error, {grpcbox_stream:code_to_status(5), <<"requested block not found">>}}
             end
+    end.
+
+-spec find_gateway(blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_gateway_req_v1_pb()) ->
+    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+find_gateway(undefined = _Chain, _Ctx, _Req) ->
+    lager:debug("chain not ready, returning error response for msg ~p", [_Req]),
+    {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
+find_gateway(Chain, Ctx, Req) ->
+    Ledger = blockchain:ledger(Chain),
+    PubKeyBin = Req#follower_gateway_req_v1_pb.address,
+    {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
+    case blockchain_ledger_v1:find_gateway_info(PubKeyBin, Ledger) of
+        {ok, GwInfo} ->
+            Location = case blockchain_ledger_gateway_v2:location(GwInfo) of
+                           undefined -> <<>>;
+                           H3 -> h3:to_string(H3)
+                       end,
+            {ok, #follower_gateway_resp_v1_pb{height=Height, address = PubKeyBin, location=Location,
+                                      owner = blockchain_ledger_gateway_v2:owner_address(GwInfo)}, Ctx};
+        _ ->
+            {ok, #follower_gateway_resp_v1_pb{height=Height, address = PubKeyBin, location = <<>>,
+                                      owner = <<>>}, Ctx}
+    end.
+
+-spec subnetwork_last_reward_height(blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_subnetwork_last_reward_height_req_v1_pb()) ->
+    {ok, follower_pb:follower_subnetwork_last_reward_height_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+subnetwork_last_reward_height(undefined = _Chain, _Ctx, _Req) ->
+    lager:debug("chain not ready, returning error response for msg ~p", [_Req]),
+    {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
+subnetwork_last_reward_height(Chain, Ctx, Req) ->
+    Ledger = blockchain:ledger(Chain),
+    TokenType = Req#follower_subnetwork_last_reward_height_req_v1_pb.token_type,
+    {ok, CurrentHeight} = blockchain_ledger_v1:current_height(Ledger),
+    case blockchain_ledger_v1:find_subnetwork_v1(TokenType, Ledger) of
+        {ok, SubnetworkLedger} ->
+            LastRewardHt = blockchain_ledger_subnetwork_v1:last_rewarded_block(SubnetworkLedger),
+            {ok, #follower_subnetwork_last_reward_height_resp_v1_pb{height = CurrentHeight, reward_height = LastRewardHt}, Ctx};
+        _ -> {grpc_error, {grpcbox_stream:code_to_status(3), <<"unable to get retrieve subnetwork for requested token">>}}
     end.
 
 -spec process_past_blocks(Height      :: pos_integer(),
