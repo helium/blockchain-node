@@ -176,10 +176,12 @@ handle_rpc(<<"wallet_pay">>, {Param}) ->
     Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Param),
     Amount = ?jsonrpc_get_param(<<"bones">>, Param, undefined),
     Max = ?jsonrpc_get_param(<<"max">>, Param, false),
+    TokenBin = ?jsonrpc_get_param(<<"token_type">>, Param, <<"hnt">>),
+    Token = jsonrpc_binary_to_token_type(TokenBin),
     Chain = blockchain_worker:blockchain(),
     Nonce = jsonrpc_nonce_param(Param, Payer, balance, Chain),
 
-    case mk_payment_txn_v2(Payer, [{Payee, Amount, Max}], Nonce, Chain) of
+    case mk_payment_txn_v2(Payer, [{Payee, Token, Amount, Max}], Nonce, Chain) of
         {ok, Txn} ->
             case sign(Payer, Txn) of
                 {ok, SignedTxn} ->
@@ -197,11 +199,13 @@ handle_rpc(<<"wallet_pay_multi">>, {Param}) ->
         case ?jsonrpc_get_param(<<"payments">>, Param, false) of
             L when is_list(L) andalso length(L) > 0 ->
                 lists:map(
-                    fun(Entry) ->
+                    fun({Entry}) ->
                         Payee = ?jsonrpc_b58_to_bin(<<"payee">>, Entry),
                         Amount = ?jsonrpc_get_param(<<"bones">>, Entry, undefined),
                         Max = ?jsonrpc_get_param(<<"max">>, Entry, false),
-                        {Payee, Amount, Max}
+                        TokenBin = ?jsonrpc_get_param(<<"token_type">>, Entry, <<"hnt">>),
+                        Token = jsonrpc_binary_to_token_type(TokenBin),
+                        {Payee, Token, Amount, Max}
                     end,
                     L
                 );
@@ -211,7 +215,6 @@ handle_rpc(<<"wallet_pay_multi">>, {Param}) ->
     Chain = blockchain_worker:blockchain(),
     Nonce = jsonrpc_nonce_param(Param, Payer, balance, Chain),
 
-    {ok, Txn} = mk_payment_txn_v2(Payer, Payments, Nonce, Chain),
     case mk_payment_txn_v2(Payer, Payments, Nonce, Chain) of
         {ok, Txn} ->
             case sign(Payer, Txn) of
@@ -222,7 +225,7 @@ handle_rpc(<<"wallet_pay_multi">>, {Param}) ->
                     ?jsonrpc_error({not_found, "Wallet is locked"})
             end;
         {error, invalid_payment} ->
-            ?jsonrpc_error({invalid_params, "Missing or invalid payment amount(s)"})
+            ?jsonrpc_error({invalid_params, "Missing or invalid payment(s)"})
     end;
 handle_rpc(<<"wallet_import">>, {Param}) ->
     Password = ?jsonrpc_get_param(<<"password">>, Param),
@@ -332,14 +335,14 @@ jsonrpc_nonce_param(Param, Address, NonceType, Chain) ->
 
 -spec mk_payment_txn_v2(
     Payer :: libp2p_crypto:pubkey_bin(),
-    [{Payee :: libp2p_crypto:pubkey_bin(), Bones :: pos_integer() | undefined, Max :: boolean()}],
+    [{Payee :: libp2p_crypto:pubkey_bin(), Token :: atom(), Bones :: pos_integer() | undefined, Max :: boolean() }],
     Nonce :: non_neg_integer(),
     Chain :: blockchain:blockchain()
 ) ->
     {ok, blockchain_txn:txn()} | {error, term()}.
 mk_payment_txn_v2(Payer, PaymentList, Nonce, Chain) ->
     try
-        Payments = [mk_payment(Payee, Bones, Max) || {Payee, Bones, Max} <- PaymentList],
+        Payments = [mk_payment(Payee, Token, Bones, Max) || {Payee, Token, Bones, Max} <- PaymentList],
         Txn = blockchain_txn_payment_v2:new(Payer, Payments, Nonce),
         TxnFee = blockchain_txn_payment_v2:calculate_fee(Txn, Chain),
         {ok, blockchain_txn_payment_v2:fee(Txn, TxnFee)}
@@ -347,10 +350,16 @@ mk_payment_txn_v2(Payer, PaymentList, Nonce, Chain) ->
         _:_ -> {error, invalid_payment}
     end.
 
-mk_payment(Payee, undefined, true) ->
-    blockchain_payment_v2:new(Payee, max);
-mk_payment(Payee, Bones, false) ->
-    blockchain_payment_v2:new(Payee, Bones).
+-spec mk_payment(
+    Payee :: libp2p_crypto:pubkey_bin(),
+    Token :: blockchain_token_v1:type(),
+    Bones :: (undefined | non_neg_integer()),
+    PayMaximum :: boolean()
+) -> blockchain_payment_v2:payment().
+mk_payment(Payee, Token, undefined, true) ->
+    blockchain_payment_v2:new(Payee, max, 0, Token);
+mk_payment(Payee, Token, Bones, false) ->
+    blockchain_payment_v2:new(Payee, Bones, 0, Token).
 
 get_state() ->
     case persistent_term:get(?MODULE, false) of
@@ -414,3 +423,21 @@ compact_db(#state{db = DB, default = Default, wallets = WalletCF}) ->
     rocksdb:compact_range(DB, Default, undefined, undefined, []),
     rocksdb:compact_range(DB, WalletCF, undefined, undefined, []),
     ok.
+
+-spec jsonrpc_binary_to_token_type(
+    TokenBin :: binary()
+) -> atom().
+jsonrpc_binary_to_token_type(Token) ->
+    case catch binary_to_existing_atom(Token) of
+        TokenType when is_atom(TokenType) -> TokenType;
+        _ -> ?jsonrpc_error({invalid_params, "Invalid token type found"})
+    end.
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+
+token_test() ->
+    ?assertEqual(jsonrpc_binary_to_token_type(<<"hnt">>), hnt),
+    ?assertThrow({invalid_params, _}, jsonrpc_binary_to_token_type(<<" NOT EVER A TOKEN">>)).
+
+-endif.

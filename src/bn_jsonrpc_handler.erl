@@ -84,9 +84,9 @@ handle_event(_, _, _) ->
 %% Param conversion
 %%
 jsonrpc_get_param(Key, PropList) ->
-    case proplists:get_value(Key, PropList, false) of
-        false -> ?jsonrpc_error(invalid_params);
-        V -> V
+    case proplists:lookup(Key, PropList) of
+        none -> ?jsonrpc_error(invalid_params);
+        {Key, V} -> V
     end.
 
 jsonrpc_get_param(Key, PropList, Default) ->
