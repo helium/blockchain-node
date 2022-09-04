@@ -814,6 +814,16 @@
             "description": "Amount in bones to send",
             "example": 1000
           },
+          "token_type": {
+            "type": "string",
+            "description": "Token type to send. [hnt, mobile, iot, hst. Default: hnt]",
+            "example": "hnt"
+          },
+          "max": {
+            "type": "boolean",
+            "description": "If true, send entire wallet balance rather than specific amount.",
+            "example": "false"
+          },
           "nonce": {
             "type": "integer",
             "description": "Nonce to use for transaction",
@@ -861,15 +871,20 @@
                 "bones": {
                   "type": "integer",
                   "description": "Amount in bones to send"
-                }
+                },
+                "token_type": {
+                  "type": "string",
+                  "description": "Token type to send. [hnt, mobile, iot, hst. Default: hnt]",
+                  "example": "hnt"
+                },
+                "max": {
+                  "type": "boolean",
+                  "description": "If true, send entire wallet balance rather than specific amount.",
+                  "example": "false"
+                },
               }
             }
-          },
-          "bones": {
-            "type": "integer",
-            "description": "Amount in bones to send",
-            "example": 1000
-          }  
+          }
         },
         "required": [
           "address",
