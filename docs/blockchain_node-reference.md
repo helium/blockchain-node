@@ -1072,7 +1072,7 @@ Sends a single payment in bones to a given account address. Note that 1 HNT it 1
 | params             | object  |             |                                                                  |
 | params.address     | string  |             | B58 address of the payer wallet                                  |
 | params.payee       | string  |             | B58 address of the payee account                                 |
-| params.bones       | integer |             | Amount in bones to send                                          |
+| params?.bones      | integer |             | Amount in bones to send. Must be specified if "max" = false.     |
 | params?.token_type | string  |             | Token type to send. [hnt, mobile, iot, hst. Default: hnt]        |
 | params?.max        | boolean |             | If true, send entire wallet balance rather than specific amount. |
 | params?.nonce      | integer |             | Nonce to use for transaction                                     |
@@ -1141,16 +1141,16 @@ Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_0
 
 ### Parameters
 
-| Name                          | Type    | Constraints | Description                                                      |
-| ----------------------------- | ------- | ----------- | ---------------------------------------------------------------- |
-| params                        | object  |             |                                                                  |
-| params.address                | string  |             | B58 address of the payer wallet                                  |
-| params.payments               | array   |             |                                                                  |
-| params.payments[]             | object  |             |                                                                  |
-| params.payments[]?.payee      | string  |             | B58 address of the payee account                                 |
-| params.payments[]?.bones      | integer |             | Amount in bones to send                                          |
-| params.payments[]?.token_type | string  |             | Token type to send. [hnt, mobile, iot, hst. Default: hnt]        |
-| params.payments[]?.max        | boolean |             | If true, send entire wallet balance rather than specific amount. |
+| Name                          | Type    | Constraints | Description                                                                                                                        |
+| ----------------------------- | ------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| params                        | object  |             |                                                                                                                                    |
+| params.address                | string  |             | B58 address of the payer wallet                                                                                                    |
+| params.payments               | array   |             |                                                                                                                                    |
+| params.payments[]             | object  |             |                                                                                                                                    |
+| params.payments[]?.payee      | string  |             | B58 address of the payee account                                                                                                   |
+| params.payments[]?.bones      | integer |             | Amount in bones to send. Must be specified if "max" = false                                                                        |
+| params.payments[]?.token_type | string  |             | Token type to send. [hnt, mobile, iot, hst. Default: hnt]                                                                          |
+| params.payments[]?.max        | boolean |             | If true, send entire wallet balance rather than specific amount. Only one payment entry per token type can have "max" set to true. |
 
 ### Result
 

@@ -2381,10 +2381,10 @@
                           <td>B58 address of the payee account</td>
                         </tr>
                         <tr>
-                          <td>params.bones</td>
+                          <td>params?.bones</td>
                           <td>integer</td>
                           <td></td>
-                          <td>Amount in bones to send</td>
+                          <td>Amount in bones to send. Must be specified if "max" = false.</td>
                         </tr>
                         <tr>
                           <td>params?.token_type</td>
@@ -2574,7 +2574,7 @@
                           <td>params.payments[]?.bones</td>
                           <td>integer</td>
                           <td></td>
-                          <td>Amount in bones to send</td>
+                          <td>Amount in bones to send. Must be specified if "max" = false</td>
                         </tr>
                         <tr>
                           <td>params.payments[]?.token_type</td>
@@ -2586,7 +2586,7 @@
                           <td>params.payments[]?.max</td>
                           <td>boolean</td>
                           <td></td>
-                          <td>If true, send entire wallet balance rather than specific amount.</td>
+                          <td>If true, send entire wallet balance rather than specific amount. Only one payment entry per token type can have "max" set to true.</td>
                         </tr>
                       </table>
                     </div>

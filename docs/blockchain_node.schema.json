@@ -811,7 +811,7 @@
           },
           "bones": {
             "type": "integer",
-            "description": "Amount in bones to send",
+            "description": "Amount in bones to send. Must be specified if \"max\" = false.",
             "example": 1000
           },
           "token_type": {
@@ -832,8 +832,7 @@
         },
         "required": [
           "address",
-          "payee",
-          "bones"
+          "payee"
         ]
       },
       "result": {
@@ -870,7 +869,7 @@
                 },
                 "bones": {
                   "type": "integer",
-                  "description": "Amount in bones to send"
+                  "description": "Amount in bones to send. Must be specified if \"max\" = false"
                 },
                 "token_type": {
                   "type": "string",
@@ -879,7 +878,7 @@
                 },
                 "max": {
                   "type": "boolean",
-                  "description": "If true, send entire wallet balance rather than specific amount.",
+                  "description": "If true, send entire wallet balance rather than specific amount. Only one payment entry per token type can have \"max\" set to true.",
                   "example": "false"
                 },
               }
