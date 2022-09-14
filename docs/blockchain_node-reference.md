@@ -193,18 +193,20 @@ Get account details for a given account address.
 
 ### Result
 
-| Name                         | Type   | Constraints | Description                                                                                          |
-| ---------------------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- |
-| result                       | object |             | Account                                                                                              |
-| result.address               | string |             | Address of the account                                                                               |
-| result.balance               | number |             | HNT balance of the account in bones                                                                  |
-| result.nonce                 | number |             | The current nonce for the account                                                                    |
-| result.speculative_nonce     | number |             | The larger of the maximum pending balance nonce or the current nonce.                                |
-| result.dc_balance            | number |             | Data credit balance of the account                                                                   |
-| result.dc_nonce              | number |             | The current data credit nonce for the account                                                        |
-| result.sec_balance           | number |             | Security token balance of the account                                                                |
-| result.sec_nonce             | number |             | The current security token nonce for the account                                                     |
-| result.sec_speculative_nonce | number |             | The larger of the maximum pending security nonce or the current security token nonce for the account |
+| Name                          | Type   | Constraints | Description                                                                                                       |
+| ----------------------------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| result                        | object |             | Account                                                                                                           |
+| result.address                | string |             | Address of the account                                                                                            |
+| result.balance                | number |             | HNT balance of the account in bones                                                                               |
+| result.mobile_balance         | number |             | MOBILE balance of the account in bones                                                                            |
+| result.iot_balance            | number |             | IOT balance of the account in bones                                                                               |
+| result.nonce                  | number |             | The current nonce for the account                                                                                 |
+| result.speculative_nonce      | number |             | The larger of the maximum pending balance nonce or the current nonce                                              |
+| result.dc_balance             | number |             | Data credit balance of the account                                                                                |
+| result.dc_nonce               | number |             | The current data credit nonce for the account                                                                     |
+| result.sec_balance            | number |             | Security token balance of the account                                                                             |
+| result?.sec_nonce             | number |             | The current security token nonce for the account (deprecated).                                                    |
+| result?.sec_speculative_nonce | number |             | The larger of the maximum pending security nonce or the current security token nonce for the account (deprecated) |
 
 ### Examples
 
@@ -228,6 +230,8 @@ Get account details for a given account address.
   "result": {
     "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
     "balance": 1000,
+    "mobile_balance": 1000,
+    "iot_balance": 1000,
     "nonce": 3,
     "speculative_nonce": 12,
     "dc_balance": 0,
@@ -1063,13 +1067,15 @@ Sends a single payment in bones to a given account address. Note that 1 HNT it 1
 
 ### Parameters
 
-| Name           | Type    | Constraints | Description                      |
-| -------------- | ------- | ----------- | -------------------------------- |
-| params         | object  |             |                                  |
-| params.address | string  |             | B58 address of the payer wallet  |
-| params.payee   | string  |             | B58 address of the payee account |
-| params.bones   | integer |             | Amount in bones to send          |
-| params?.nonce  | integer |             | Nonce to use for transaction     |
+| Name               | Type    | Constraints | Description                                                      |
+| ------------------ | ------- | ----------- | ---------------------------------------------------------------- |
+| params             | object  |             |                                                                  |
+| params.address     | string  |             | B58 address of the payer wallet                                  |
+| params.payee       | string  |             | B58 address of the payee account                                 |
+| params.bones       | integer |             | Amount in bones to send                                          |
+| params?.token_type | string  |             | Token type to send. [hnt, mobile, iot, hst. Default: hnt]        |
+| params?.max        | boolean |             | If true, send entire wallet balance rather than specific amount. |
+| params?.nonce      | integer |             | Nonce to use for transaction                                     |
 
 ### Result
 
@@ -1101,6 +1107,8 @@ Sends a single payment in bones to a given account address. Note that 1 HNT it 1
     "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
     "payee": "13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH",
     "bones": 1000,
+    "token_type": "hnt",
+    "max": "false",
     "nonce": 422
   }
 }
@@ -1133,15 +1141,16 @@ Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_0
 
 ### Parameters
 
-| Name                     | Type    | Constraints | Description                      |
-| ------------------------ | ------- | ----------- | -------------------------------- |
-| params                   | object  |             |                                  |
-| params.address           | string  |             | B58 address of the payer wallet  |
-| params.payments          | array   |             |                                  |
-| params.payments[]        | object  |             |                                  |
-| params.payments[]?.payee | string  |             | B58 address of the payee account |
-| params.payments[]?.bones | integer |             | Amount in bones to send          |
-| params?.bones            | integer |             | Amount in bones to send          |
+| Name                          | Type    | Constraints | Description                                                      |
+| ----------------------------- | ------- | ----------- | ---------------------------------------------------------------- |
+| params                        | object  |             |                                                                  |
+| params.address                | string  |             | B58 address of the payer wallet                                  |
+| params.payments               | array   |             |                                                                  |
+| params.payments[]             | object  |             |                                                                  |
+| params.payments[]?.payee      | string  |             | B58 address of the payee account                                 |
+| params.payments[]?.bones      | integer |             | Amount in bones to send                                          |
+| params.payments[]?.token_type | string  |             | Token type to send. [hnt, mobile, iot, hst. Default: hnt]        |
+| params.payments[]?.max        | boolean |             | If true, send entire wallet balance rather than specific amount. |
 
 ### Result
 
@@ -1170,8 +1179,12 @@ Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_0
   "id": "1234567890",
   "method": "wallet_pay_multi",
   "params": {
-    "payments": [{}],
-    "bones": 1000
+    "payments": [
+      {
+        "token_type": "hnt",
+        "max": "false"
+      }
+    ]
   }
 }
 ```

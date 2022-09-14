@@ -538,6 +538,18 @@
                           <td>HNT balance of the account in bones</td>
                         </tr>
                         <tr>
+                          <td>result.mobile_balance</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>MOBILE balance of the account in bones</td>
+                        </tr>
+                        <tr>
+                          <td>result.iot_balance</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>IOT balance of the account in bones</td>
+                        </tr>
+                        <tr>
                           <td>result.nonce</td>
                           <td>number</td>
                           <td></td>
@@ -547,7 +559,7 @@
                           <td>result.speculative_nonce</td>
                           <td>number</td>
                           <td></td>
-                          <td>The larger of the maximum pending balance nonce or the current nonce.</td>
+                          <td>The larger of the maximum pending balance nonce or the current nonce</td>
                         </tr>
                         <tr>
                           <td>result.dc_balance</td>
@@ -568,16 +580,16 @@
                           <td>Security token balance of the account</td>
                         </tr>
                         <tr>
-                          <td>result.sec_nonce</td>
+                          <td>result?.sec_nonce</td>
                           <td>number</td>
                           <td></td>
-                          <td>The current security token nonce for the account</td>
+                          <td>The current security token nonce for the account (deprecated).</td>
                         </tr>
                         <tr>
-                          <td>result.sec_speculative_nonce</td>
+                          <td>result?.sec_speculative_nonce</td>
                           <td>number</td>
                           <td></td>
-                          <td>The larger of the maximum pending security nonce or the current security token nonce for the account</td>
+                          <td>The larger of the maximum pending security nonce or the current security token nonce for the account (deprecated)</td>
                         </tr>
                       </table>
                     </div>
@@ -601,6 +613,8 @@
   "result": {
     "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
     "balance": 1000,
+    "mobile_balance": 1000,
+    "iot_balance": 1000,
     "nonce": 3,
     "speculative_nonce": 12,
     "dc_balance": 0,
@@ -2373,6 +2387,18 @@
                           <td>Amount in bones to send</td>
                         </tr>
                         <tr>
+                          <td>params?.token_type</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Token type to send. [hnt, mobile, iot, hst. Default: hnt]</td>
+                        </tr>
+                        <tr>
+                          <td>params?.max</td>
+                          <td>boolean</td>
+                          <td></td>
+                          <td>If true, send entire wallet balance rather than specific amount.</td>
+                        </tr>
+                        <tr>
                           <td>params?.nonce</td>
                           <td>integer</td>
                           <td></td>
@@ -2457,6 +2483,8 @@
     "address": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5",
     "payee": "13buBykFQf5VaQtv7mWj2PBY9Lq4i1DeXhg7C4Vbu3ppzqqNkTH",
     "bones": 1000,
+    "token_type": "hnt",
+    "max": "false",
     "nonce": 422
   }
 }</pre>
@@ -2549,10 +2577,16 @@
                           <td>Amount in bones to send</td>
                         </tr>
                         <tr>
-                          <td>params?.bones</td>
-                          <td>integer</td>
+                          <td>params.payments[]?.token_type</td>
+                          <td>string</td>
                           <td></td>
-                          <td>Amount in bones to send</td>
+                          <td>Token type to send. [hnt, mobile, iot, hst. Default: hnt]</td>
+                        </tr>
+                        <tr>
+                          <td>params.payments[]?.max</td>
+                          <td>boolean</td>
+                          <td></td>
+                          <td>If true, send entire wallet balance rather than specific amount.</td>
                         </tr>
                       </table>
                     </div>
@@ -2631,9 +2665,11 @@
   "method": "wallet_pay_multi",
   "params": {
     "payments": [
-      {}
-    ],
-    "bones": 1000
+      {
+        "token_type": "hnt",
+        "max": "false"
+      }
+    ]
   }
 }</pre>
 
