@@ -383,6 +383,16 @@
             "type": "number",
             "description": "The larger of the maximum pending security nonce or the current security token nonce for the account (deprecated)",
             "example": 0
+          },
+          "staked_balance": {
+            "type": "number",
+            "description": "Staked HNT balance of the account",
+            "example": 0
+          },
+          "cooldown_balance": {
+            "type": "number",
+            "description": "Staked HNT balance of the account currently in cooldown",
+            "example": 0
           }
         },
         "required": [
@@ -394,7 +404,9 @@
           "dc_nonce",
           "sec_balance",
           "iot_balance",
-          "mobile_balance"
+          "mobile_balance",
+          "staked_balance",
+          "cooldown_balance"
         ]
       }
     },
