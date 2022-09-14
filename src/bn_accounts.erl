@@ -23,10 +23,27 @@ handle_rpc(<<"account_get">>, {Param}) ->
             1 -> get_balance_entry_v1(Address, Ledger);
             2 -> get_balance_entry_v2(Address, Ledger)
         end,
+    {StakedBalance, CooldownBalance} = blockchain_ledger_v1:fold_validators(fun(Val, {SAcc, CAcc} = Acc) ->
+            case blockchain_ledger_validator_v1:owner_address(Val) of
+                Address ->
+                    case blockchain_ledger_validator_v1:status(Val) of
+                        staked ->
+                            {SAcc + blockchain_ledger_validator_v1:stake(Val), CAcc};
+                        cooldown ->
+                            {SAcc, CAcc + blockchain_ledger_validator_v1:stake(Val)};
+                        _ ->
+                            Acc
+                    end;
+                _ ->
+                    Acc
+            end
+        end, {0, 0}, Ledger),
     InfoMap =
         #{
             address => ?BIN_TO_B58(Address),
-            block => Height
+            block => Height,
+            staked_balance => StakedBalance,
+            cooldown_balance => CooldownBalance
         },
     maps:merge(BalanceMap, InfoMap);
 handle_rpc(_, _) ->

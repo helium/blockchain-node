@@ -207,6 +207,8 @@ Get account details for a given account address.
 | result.sec_balance            | number |             | Security token balance of the account                                                                             |
 | result?.sec_nonce             | number |             | The current security token nonce for the account (deprecated).                                                    |
 | result?.sec_speculative_nonce | number |             | The larger of the maximum pending security nonce or the current security token nonce for the account (deprecated) |
+| result.staked_balance         | number |             | Staked HNT balance of the account                                                                                 |
+| result.cooldown_balance       | number |             | Staked HNT balance of the account currently in cooldown                                                           |
 
 ### Examples
 
@@ -238,7 +240,9 @@ Get account details for a given account address.
     "dc_nonce": 0,
     "sec_balance": 0,
     "sec_nonce": 0,
-    "sec_speculative_nonce": 0
+    "sec_speculative_nonce": 0,
+    "staked_balance": 0,
+    "cooldown_balance": 0
   }
 }
 ```

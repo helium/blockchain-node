@@ -591,6 +591,18 @@
                           <td></td>
                           <td>The larger of the maximum pending security nonce or the current security token nonce for the account (deprecated)</td>
                         </tr>
+                        <tr>
+                          <td>result.staked_balance</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Staked HNT balance of the account</td>
+                        </tr>
+                        <tr>
+                          <td>result.cooldown_balance</td>
+                          <td>number</td>
+                          <td></td>
+                          <td>Staked HNT balance of the account currently in cooldown</td>
+                        </tr>
                       </table>
                     </div>
                     
@@ -621,7 +633,9 @@
     "dc_nonce": 0,
     "sec_balance": 0,
     "sec_nonce": 0,
-    "sec_speculative_nonce": 0
+    "sec_speculative_nonce": 0,
+    "staked_balance": 0,
+    "cooldown_balance": 0
   }
 }</pre>
                   </div>
