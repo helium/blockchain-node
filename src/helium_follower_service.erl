@@ -5,12 +5,17 @@
 %%%-------------------------------------------------------------------
 -module(helium_follower_service).
 
--behaviour(helium_follower_bhvr).
+-behaviour(helium_follower_follower_bhvr).
 
 -include("grpc/autogen/server/follower_pb.hrl").
 -include_lib("blockchain/include/blockchain.hrl").
 
--export([txn_stream/2, find_gateway/2, subnetwork_last_reward_height/2]).
+-export([
+         txn_stream/2,
+         find_gateway/2,
+         subnetwork_last_reward_height/2,
+         active_gateways/2
+        ]).
 
 -export([init/2, handle_info/2]).
 
@@ -46,6 +51,12 @@ find_gateway(Ctx, Req) ->
 subnetwork_last_reward_height(Ctx, Req) ->
     Chain = blockchain_worker:cached_blockchain(),
     subnetwork_last_reward_height(Chain, Ctx, Req).
+
+-spec active_gateways(follower_pb:follower_gateway_stream_req_v1_pb(), grpcbox_stream:t()) ->
+        {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
+active_gateways(_Msg, StreamState) ->
+    lager:warning("unimplemented function", []),
+    {ok, StreamState}.
 
 -spec init(atom(), grpcbox_stream:t()) -> grpcbox_stream:t().
 init(_RPC, StreamState) ->
