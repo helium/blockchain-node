@@ -9,6 +9,7 @@
 
 -include("grpc/autogen/server/follower_pb.hrl").
 -include_lib("blockchain/include/blockchain.hrl").
+-include_lib("blockchain/include/blockchain_vars.hrl").
 
 -export([
          txn_stream/2,
@@ -57,9 +58,51 @@ subnetwork_last_reward_height(Ctx, Req) ->
     subnetwork_last_reward_height(Chain, Ctx, Req).
 
 -spec active_gateways(follower_pb:follower_gateway_stream_req_v1_pb(), grpcbox_stream:t()) ->
-    {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
+        {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
+active_gateways(#follower_gateway_stream_req_v1_pb{} = _Msg, StreamState) ->
+    #{chain := Chain} =  grpcbox_stream:stream_handler_state(StreamState),
+    case Chain of
+        undefined ->
+            lager:debug("chain not ready, returning error response for msg ~p", [_Msg]),
+            {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
+        _ ->
+            StreamState1 = grpcbox_stream:update_headers([{<<"gateway_stream">>, <<"start">>}], StreamState),
+
+            Ledger = blockchain:ledger(Chain),
+            {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
+
+            InteractiveBlock = case ?get_var(?hip17_interactivity_blocks, Ledger) of
+                                   {ok, V} -> V;
+                                   {error, not_found} -> 0
+                               end,
+            lager:info("LOADING ACTIVE GATEWAYS", []),
+            {NumGateways, StreamState2} =
+                blockchain_ledger_v1:cf_fold(
+                    active_gateways,
+                    fun({Addr, BinGw}, {Acc, StreamAcc}) ->
+                        Gw = blockchain_ledger_gateway_v2:deserialize(BinGw),
+                        Loc = blockchain_ledger_gateway_v2:location(Gw),
+                        LastChallenge = blockchain_ledger_gateway_v2:last_poc_challenge(Gw),
+                        case Loc /= undefined andalso (LastChallenge /= undefined andalso (Height - LastChallenge) =< InteractiveBlock) of
+                            true ->
+                                Msg = #follower_gateway_resp_v1_pb{
+                                          height = Height,
+                                          address = Addr,
+                                          location = h3:to_string(Loc),
+                                          owner = blockchain_ledger_gateway_v2:owner_address(Gw)
+                                      },
+                                StreamAcc1 = grpcbox_stream:send(false, Msg, StreamAcc),
+                                {Acc + 1, StreamAcc1};
+                            _ -> {Acc, StreamAcc}
+                        end
+                    end, {0, StreamState1}, Ledger),
+
+            StreamState3 = grpcbox_stream:update_trailers([{<<"gateway_stream">>, <<"end">>},
+                                         {<<"num_gateways">>, integer_to_binary(NumGateways)}], StreamState2),
+            {stop, StreamState3}
+    end;
 active_gateways(_Msg, StreamState) ->
-    lager:warning("unimplemented function", []),
+    lager:warning("unhandled grpc msg ~p", [_Msg]),
     {ok, StreamState}.
 
 -spec init(atom(), grpcbox_stream:t()) -> grpcbox_stream:t().
