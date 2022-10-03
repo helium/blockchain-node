@@ -23,7 +23,7 @@ case "$BUILD_TARGET" in
         ;;
 esac
 
-docker build $DOCKER_BUILD_ARGS -t "helium:${DOCKER_NAME}" -f "$DOCKERFILE" .
+docker buildx build --platform linux/amd64,linux/arm64 $DOCKER_BUILD_ARGS -t "helium:${DOCKER_NAME}" -f "$DOCKERFILE" .
 docker tag "helium:$DOCKER_NAME" "$REGISTRY_HOST:$DOCKER_NAME"
 docker login -u="team-helium+buildkite" -p="${QUAY_BUILDKITE_PASSWORD}" quay.io
 docker push "$REGISTRY_HOST:$DOCKER_NAME"
