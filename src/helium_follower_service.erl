@@ -131,15 +131,24 @@ find_gateway(Chain, Ctx, Req) ->
     {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
     case blockchain_ledger_v1:find_gateway_info(PubKeyBin, Ledger) of
         {ok, GwInfo} ->
-            Location = case blockchain_ledger_gateway_v2:location(GwInfo) of
-                           undefined -> <<>>;
-                           H3 -> h3:to_string(H3)
-                       end,
-            {ok, #follower_gateway_resp_v1_pb{height=Height, address = PubKeyBin, location=Location,
-                                      owner = blockchain_ledger_gateway_v2:owner_address(GwInfo)}, Ctx};
-        _ ->
-            {ok, #follower_gateway_resp_v1_pb{height=Height, address = PubKeyBin, location = <<>>,
-                                      owner = <<>>}, Ctx}
+            {Location, Region} =
+                case blockchain_ledger_gateway_v2:location(GwInfo) of
+                   undefined -> {<<>>, undefined};
+                   H3 ->
+                       case blockchain_region_v1:h3_to_region(H3, Ledger) of
+                            {ok, R} ->  {h3:to_string(H3), normalize_region(R)};
+                            _ -> {h3:to_string(H3), undefined}
+                        end
+               end,
+            {ok, #follower_gateway_resp_v1_pb{
+                height=Height,
+                address = PubKeyBin,
+                location=Location,
+                owner = blockchain_ledger_gateway_v2:owner_address(GwInfo),
+                staking_mode =  blockchain_ledger_gateway_v2:mode(GwInfo),
+                gain = blockchain_ledger_gateway_v2:gain(GwInfo),
+                region = Region
+            }, Ctx}
     end.
 
 -spec subnetwork_last_reward_height(blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_subnetwork_last_reward_height_req_v1_pb()) ->
@@ -253,3 +262,9 @@ validate_txn_filters(TxnFilters0) ->
 is_blockchain_txn(Module) ->
     ModInfo = Module:module_info(attributes),
     lists:any(fun({behavior, [blockchain_txn]}) -> true; (_) -> false end, ModInfo).
+
+%% blockchain_region_v1 returns region as an atom with a 'region_' prefix, ie
+%% 'region_us915' etc, we need it without the prefix and capitalised to
+%% be compatible with the proto
+normalize_region(V) ->
+    list_to_atom(string:to_upper(string:slice(atom_to_list(V), 7))).
