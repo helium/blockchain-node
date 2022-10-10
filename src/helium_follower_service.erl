@@ -68,9 +68,6 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
             lager:debug("chain not ready, returning error response for msg ~p", [_Msg]),
             {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
         _ ->
-            % lager:warning("UPDATING HEADERS", []),
-            % StreamState1 = grpcbox_stream:update_headers([{<<"gateway_stream">>, <<"start">>}], StreamState),
-
             Ledger = blockchain:ledger(Chain),
             {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
 
@@ -84,22 +81,32 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
                     fun({Addr, BinGw}, {CountAcc, GwAcc, StreamAcc}) ->
                         Gw = blockchain_ledger_gateway_v2:deserialize(BinGw),
                         Loc = blockchain_ledger_gateway_v2:location(Gw),
-                        LastChallenge = blockchain_ledger_gateway_v2:last_poc_challenge(Gw),
-                        case Loc /= undefined andalso (LastChallenge /= undefined andalso (Height - LastChallenge) =< InteractiveBlock) of
+                        LastBeacon = case blockchain_ledger_v1:find_gateway_last_beacon(Addr, Ledger) of
+                                         {ok, LB} -> LB;
+                                         {error, _} -> undefined
+                                     end,
+                        case Loc /= undefined andalso (LastBeacon /= undefined andalso (Height - LastBeacon) =< InteractiveBlock) of
                             true ->
+                                Region = case blockchain_region_v1:h3_to_region(Loc, Ledger) of
+                                             {ok, R} -> normalize_region(R);
+                                             _ -> undefined
+                                         end,
                                 GwResp = #follower_gateway_resp_v1_pb{
                                           height = Height,
-                                          address = Addr,
-                                          location = h3:to_string(Loc),
-                                          owner = blockchain_ledger_gateway_v2:owner_address(Gw)
-                                      },
+                                          result = {info, #gateway_info_pb{
+                                              address = Addr,
+                                              location = h3:to_string(Loc),
+                                              owner = blockchain_ledger_gateway_v2:owner_address(Gw),
+                                              staking_mode = blockchain_ledger_gateway_v2:mode(Gw),
+                                              gain = blockchain_ledger_gateway_v2:gain(Gw),
+                                              region = Region
+                                      }}},
                                 GwAcc1 = [GwResp | GwAcc],
                                 RespLen = length(GwAcc1),
                                 case RespLen >= ?GW_STREAM_BATCH_SIZE of
                                     true ->
                                         Resp = #follower_gateway_stream_resp_v1_pb{ gateways = GwAcc1 },
                                         StreamAcc1 = grpcbox_stream:send(false, Resp, StreamAcc),
-                                        timer:sleep(100),
                                         {CountAcc + RespLen, [], StreamAcc1};
                                     _ ->
                                         {CountAcc, GwAcc1, StreamAcc}
@@ -122,7 +129,7 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
             StreamState4 = grpcbox_stream:update_trailers([{<<"num_gateways">>, integer_to_binary(FinalGwCount)}], StreamState3),
             {stop, StreamState4}
     end;
-active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Msg, StreamState) ->
+active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Msg, _StreamState) ->
     lager:info("Requested batch size exceeds maximum allowed batch count: ~p", [BatchSize]),
     {grpc_error, {grpcbox_stream:code_to_status(3), <<"maximum batch size exceeded">>}};
 active_gateways(_Msg, StreamState) ->
