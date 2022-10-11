@@ -148,7 +148,9 @@ find_gateway(Chain, Ctx, Req) ->
                 staking_mode =  blockchain_ledger_gateway_v2:mode(GwInfo),
                 gain = blockchain_ledger_gateway_v2:gain(GwInfo),
                 region = Region
-            }, Ctx}
+            }, Ctx};
+        _ ->
+            {grpc_error, {grpcbox_stream:code_to_status(5), <<"gateway_not_found">>}}
     end.
 
 -spec subnetwork_last_reward_height(blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_subnetwork_last_reward_height_req_v1_pb()) ->
