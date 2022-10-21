@@ -41,7 +41,8 @@ txn_stream(_Msg, StreamState) ->
     {ok, StreamState}.
 
 -spec find_gateway(ctx:ctx(), follower_pb:follower_gateway_req_v1_pb()) ->
-    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()}
+    | grpcbox_stream:grpc_error_response().
 find_gateway(Ctx, Req) ->
     Chain = blockchain_worker:cached_blockchain(),
     find_gateway(Chain, Ctx, Req).
@@ -133,8 +134,11 @@ txn_stream(
             end
     end.
 
--spec find_gateway(blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_gateway_req_v1_pb()) ->
-    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+-spec find_gateway(
+    blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_gateway_req_v1_pb()
+) ->
+    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()}
+    | grpcbox_stream:grpc_error_response().
 find_gateway(undefined = _Chain, _Ctx, _Req) ->
     lager:debug("chain not ready, returning error response for msg ~p", [_Req]),
     {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
