@@ -31,7 +31,7 @@
 %% helium_follower_bhvr callback functions
 %% -------------------------------------------------------------------
 -spec txn_stream(follower_pb:follower_txn_stream_req_v1_pb(), grpcbox_stream:t()) ->
-        {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
+    {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
 txn_stream(#follower_txn_stream_req_v1_pb{} = Msg, StreamState) ->
     #{chain := Chain, streaming_initialized := StreamInitialized} =
         grpcbox_stream:stream_handler_state(StreamState),
@@ -46,14 +46,17 @@ find_gateway(Ctx, Req) ->
     Chain = blockchain_worker:cached_blockchain(),
     find_gateway(Chain, Ctx, Req).
 
--spec subnetwork_last_reward_height(ctx:ctx(), follower_pb:follower_subnetwork_last_reward_height_req_v1_pb()) ->
-    {ok, follower_pb:follower_subnetwork_last_reward_height_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+-spec subnetwork_last_reward_height(
+    ctx:ctx(), follower_pb:follower_subnetwork_last_reward_height_req_v1_pb()
+) ->
+    {ok, follower_pb:follower_subnetwork_last_reward_height_resp_v1_pb(), ctx:ctx()}
+    | grpcbox_stream:grpc_error_response().
 subnetwork_last_reward_height(Ctx, Req) ->
     Chain = blockchain_worker:cached_blockchain(),
     subnetwork_last_reward_height(Chain, Ctx, Req).
 
 -spec active_gateways(follower_pb:follower_gateway_stream_req_v1_pb(), grpcbox_stream:t()) ->
-        {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
+    {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
 active_gateways(_Msg, StreamState) ->
     lager:warning("unimplemented function", []),
     {ok, StreamState}.
@@ -86,8 +89,13 @@ handle_info(_Msg, StreamState) ->
 %% -------------------------------------------------------------------
 %% internal and callback breakdown functions
 %% -------------------------------------------------------------------
--spec txn_stream(blockchain:blockchain() | undefined, boolean(), follower_pb:follower_txn_stream_req_v1_pb(), grpcbox_stream:t()) ->
-        {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
+-spec txn_stream(
+    blockchain:blockchain() | undefined,
+    boolean(),
+    follower_pb:follower_txn_stream_req_v1_pb(),
+    grpcbox_stream:t()
+) ->
+    {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
 txn_stream(undefined = _Chain, _StreamInitialized, _Msg, _StreamState) ->
     lager:debug("chain not ready, returning error response for msg ~p", [_Msg]),
     {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
@@ -109,14 +117,19 @@ txn_stream(
                 {ok, StreamState1} ->
                     HandlerState = grpcbox_stream:stream_handler_state(StreamState1),
                     StreamState2 = grpcbox_stream:stream_handler_state(
-                                    StreamState1,
-                                    HandlerState#{streaming_initialized => true, txn_types => TxnTypes}
-                                ),
+                        StreamState1,
+                        HandlerState#{streaming_initialized => true, txn_types => TxnTypes}
+                    ),
                     {ok, StreamState2};
                 {error, invalid_req_params} ->
-                    {grpc_error, {grpcbox_stream:code_to_status(3), <<"invalid starting height, txn hash, or filter">>}};
+                    {grpc_error, {
+                        grpcbox_stream:code_to_status(3),
+                        <<"invalid starting height, txn hash, or filter">>
+                    }};
                 {error, _} ->
-                    {grpc_error, {grpcbox_stream:code_to_status(5), <<"requested block not found">>}}
+                    {grpc_error, {
+                        grpcbox_stream:code_to_status(5), <<"requested block not found">>
+                    }}
             end
     end.
 
@@ -133,26 +146,38 @@ find_gateway(Chain, Ctx, Req) ->
         {ok, GwInfo} ->
             {Location, Region} =
                 case blockchain_ledger_gateway_v2:location(GwInfo) of
-                   undefined -> {<<>>, undefined};
-                   H3 ->
-                       case blockchain_region_v1:h3_to_region(H3, Ledger) of
-                            {ok, R} ->  {h3:to_string(H3), normalize_region(R)};
+                    undefined -> {<<>>, undefined};
+                    H3 ->
+                        case blockchain_region_v1:h3_to_region(H3, Ledger) of
+                            {ok, R} -> {h3:to_string(H3), normalize_region(R)};
                             _ -> {h3:to_string(H3), undefined}
                         end
-               end,
-            {ok, #follower_gateway_resp_v1_pb{
-                height=Height,
-                address = PubKeyBin,
-                location=Location,
-                owner = blockchain_ledger_gateway_v2:owner_address(GwInfo),
-                staking_mode =  blockchain_ledger_gateway_v2:mode(GwInfo),
-                gain = blockchain_ledger_gateway_v2:gain(GwInfo),
-                region = Region
-            }, Ctx}
+                end,
+            {ok,
+                #follower_gateway_resp_v1_pb{
+                    height = Height,
+                    result = {info, #gateway_info_pb{
+                        address = PubKeyBin,
+                        location = Location,
+                        owner = blockchain_ledger_gateway_v2:owner_address(GwInfo),
+                        staking_mode = blockchain_ledger_gateway_v2:mode(GwInfo),
+                        gain = blockchain_ledger_gateway_v2:gain(GwInfo),
+                        region = Region
+                    }}
+                },
+                Ctx};
+        _ ->
+            ErrorResult = {error, #follower_error_pb{type = {not_found, #gateway_not_found_pb{address = PubKeyBin}}}},
+            {ok, #follower_gateway_resp_v1_pb{height = Height, result = ErrorResult}, Ctx}
     end.
 
--spec subnetwork_last_reward_height(blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_subnetwork_last_reward_height_req_v1_pb()) ->
-    {ok, follower_pb:follower_subnetwork_last_reward_height_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+-spec subnetwork_last_reward_height(
+    blockchain:chain() | undefined,
+    ctx:ctx(),
+    follower_pb:follower_subnetwork_last_reward_height_req_v1_pb()
+) ->
+    {ok, follower_pb:follower_subnetwork_last_reward_height_resp_v1_pb(), ctx:ctx()}
+    | grpcbox_stream:grpc_error_response().
 subnetwork_last_reward_height(undefined = _Chain, _Ctx, _Req) ->
     lager:debug("chain not ready, returning error response for msg ~p", [_Req]),
     {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
@@ -245,11 +270,18 @@ subscribed_type(_Type, []) -> true;
 subscribed_type(Type, FilterTypes) -> lists:member(Type, FilterTypes).
 
 validate_txn_filters(TxnFilters0) ->
-    case (catch lists:foldl(fun(BinType, AtomTypes) when is_binary(BinType) ->
+    case
+        (catch lists:foldl(
+            fun
+                (BinType, AtomTypes) when is_binary(BinType) ->
                     [binary_to_existing_atom(BinType, utf8) | AtomTypes];
                 (BinType, AtomTypes) when is_list(BinType) ->
                     [list_to_existing_atom(BinType) | AtomTypes]
-                end, [], TxnFilters0)) of
+            end,
+            [],
+            TxnFilters0
+        ))
+    of
         {'EXIT', _} ->
             {error, invalid_filter};
         TxnFilters when is_list(TxnFilters) ->
