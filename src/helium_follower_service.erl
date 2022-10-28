@@ -9,6 +9,7 @@
 
 -include("grpc/autogen/server/follower_pb.hrl").
 -include_lib("blockchain/include/blockchain.hrl").
+-include_lib("blockchain/include/blockchain_vars.hrl").
 
 -export([
          txn_stream/2,
@@ -27,6 +28,8 @@
 
 -export_type([handler_state/0]).
 
+-define(GW_STREAM_BATCH_SIZE, 5000).
+
 %% -------------------------------------------------------------------
 %% helium_follower_bhvr callback functions
 %% -------------------------------------------------------------------
@@ -41,7 +44,8 @@ txn_stream(_Msg, StreamState) ->
     {ok, StreamState}.
 
 -spec find_gateway(ctx:ctx(), follower_pb:follower_gateway_req_v1_pb()) ->
-    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()}
+    | grpcbox_stream:grpc_error_response().
 find_gateway(Ctx, Req) ->
     Chain = blockchain_worker:cached_blockchain(),
     find_gateway(Chain, Ctx, Req).
@@ -56,9 +60,80 @@ subnetwork_last_reward_height(Ctx, Req) ->
     subnetwork_last_reward_height(Chain, Ctx, Req).
 
 -spec active_gateways(follower_pb:follower_gateway_stream_req_v1_pb(), grpcbox_stream:t()) ->
-    {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
+        {ok, grpcbox_stream:t()} | grpcbox_stream:grpc_error_response().
+active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Msg, StreamState) when BatchSize =< ?GW_STREAM_BATCH_SIZE ->
+    #{chain := Chain} =  grpcbox_stream:stream_handler_state(StreamState),
+    case Chain of
+        undefined ->
+            lager:debug("chain not ready, returning error response for msg ~p", [_Msg]),
+            {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
+        _ ->
+            Ledger = blockchain:ledger(Chain),
+            {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
+
+            InteractiveBlock = case ?get_var(?hip17_interactivity_blocks, Ledger) of
+                                   {ok, V} -> V;
+                                   {error, not_found} -> 0
+                               end,
+            {NumGateways, FinalGws, StreamState1} =
+                blockchain_ledger_v1:cf_fold(
+                    active_gateways,
+                    fun({Addr, BinGw}, {CountAcc, GwAcc, StreamAcc}) ->
+                        Gw = blockchain_ledger_gateway_v2:deserialize(BinGw),
+                        Loc = blockchain_ledger_gateway_v2:location(Gw),
+                        LastBeacon = case blockchain_ledger_v1:find_gateway_last_beacon(Addr, Ledger) of
+                                         {ok, LB} -> LB;
+                                         {error, _} -> undefined
+                                     end,
+                        case Loc /= undefined andalso (LastBeacon /= undefined andalso (Height - LastBeacon) =< InteractiveBlock) of
+                            true ->
+                                Region = case blockchain_region_v1:h3_to_region(Loc, Ledger) of
+                                             {ok, R} -> normalize_region(R);
+                                             _ -> undefined
+                                         end,
+                                GwResp = #follower_gateway_resp_v1_pb{
+                                          height = Height,
+                                          result = {info, #gateway_info_pb{
+                                              address = Addr,
+                                              location = h3:to_string(Loc),
+                                              owner = blockchain_ledger_gateway_v2:owner_address(Gw),
+                                              staking_mode = blockchain_ledger_gateway_v2:mode(Gw),
+                                              gain = blockchain_ledger_gateway_v2:gain(Gw),
+                                              region = Region
+                                      }}},
+                                GwAcc1 = [GwResp | GwAcc],
+                                RespLen = length(GwAcc1),
+                                case RespLen >= ?GW_STREAM_BATCH_SIZE of
+                                    true ->
+                                        Resp = #follower_gateway_stream_resp_v1_pb{ gateways = GwAcc1 },
+                                        StreamAcc1 = grpcbox_stream:send(false, Resp, StreamAcc),
+                                        {CountAcc + RespLen, [], StreamAcc1};
+                                    _ ->
+                                        {CountAcc, GwAcc1, StreamAcc}
+                                end;
+                            _ -> {CountAcc, GwAcc, StreamAcc}
+                        end
+                    end, {0, [], StreamState}, Ledger),
+
+            FinalGwLen = length(FinalGws),
+            {FinalGwCount, StreamState3} =
+                case FinalGwLen > 0 of
+                    true ->
+                        Resp = #follower_gateway_stream_resp_v1_pb{ gateways = FinalGws },
+                        StreamState2 = grpcbox_stream:send(false, Resp, StreamState1),
+                        {NumGateways + FinalGwLen, StreamState2};
+                    _ ->
+                        {NumGateways, StreamState1}
+                end,
+
+            StreamState4 = grpcbox_stream:update_trailers([{<<"num_gateways">>, integer_to_binary(FinalGwCount)}], StreamState3),
+            {stop, StreamState4}
+    end;
+active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Msg, _StreamState) ->
+    lager:info("Requested batch size exceeds maximum allowed batch count: ~p", [BatchSize]),
+    {grpc_error, {grpcbox_stream:code_to_status(3), <<"maximum batch size exceeded">>}};
 active_gateways(_Msg, StreamState) ->
-    lager:warning("unimplemented function", []),
+    lager:warning("unhandled grpc msg ~p", [_Msg]),
     {ok, StreamState}.
 
 -spec init(atom(), grpcbox_stream:t()) -> grpcbox_stream:t().
@@ -133,8 +208,11 @@ txn_stream(
             end
     end.
 
--spec find_gateway(blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_gateway_req_v1_pb()) ->
-    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+-spec find_gateway(
+    blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_gateway_req_v1_pb()
+) ->
+    {ok, follower_pb:follower_gateway_resp_v1_pb(), ctx:ctx()}
+    | grpcbox_stream:grpc_error_response().
 find_gateway(undefined = _Chain, _Ctx, _Req) ->
     lager:debug("chain not ready, returning error response for msg ~p", [_Req]),
     {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
