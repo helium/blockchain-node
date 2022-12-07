@@ -56,7 +56,7 @@ ENV COOKIE=node \
 
 COPY --from=builder /opt/docker ./
 
-RUN ln -sf releases/$VERSION /config
+RUN ln -sf /opt/blockchain_node/releases/$VERSION /config
 
 ENTRYPOINT ["bin/blockchain_node"]
 CMD ["foreground"]
