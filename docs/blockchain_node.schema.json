@@ -48,7 +48,7 @@
             "properties": {
               "hash": {
                 "type": "string",
-                "description": "Transaction hash"                
+                "description": "Transaction hash"
               },
               "type": {
                 "type": "string",
@@ -88,13 +88,7 @@
           ]
         }
       },
-      "required": [
-        "hash",
-        "height",
-        "prev_hash",
-        "time",
-        "transactions"
-      ]
+      "required": ["hash", "height", "prev_hash", "time", "transactions"]
     },
     "transaction": {
       "type": "object",
@@ -112,10 +106,7 @@
           "$ref": "#/definitions/implicit_burn"
         }
       },
-      "required": [
-        "type",
-        "hash"
-      ]
+      "required": ["type", "hash"]
     },
     "pending_transaction": {
       "type": "object",
@@ -133,9 +124,7 @@
           "description": "Present during failed status"
         }
       },
-      "required": [
-        "status"
-      ]
+      "required": ["status"]
     },
     "backup_info": {
       "type": "object",
@@ -159,12 +148,7 @@
           "description": "Timestamp (seconds since epoch) of backup"
         }
       },
-      "required": [
-        "backup_id",
-        "number_files",
-        "size",
-        "timestamp"
-      ]
+      "required": ["backup_id", "number_files", "size", "timestamp"]
     },
     "oracle_price": {
       "type": "object",
@@ -181,10 +165,7 @@
           "example": 633936
         }
       },
-      "required": [
-        "price",
-        "height"
-      ]
+      "required": ["price", "height"]
     },
     "implicit_burn": {
       "type": "object",
@@ -201,10 +182,7 @@
           "example": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
         }
       },
-      "required": [
-        "fee",
-        "payer"
-      ]
+      "required": ["fee", "payer"]
     },
     "htlc_receipt": {
       "type": "object",
@@ -260,9 +238,7 @@
     "block_height": {
       "summary": "Gets the stored height of the blockchain.",
       "description": "Gets the stored height of the blockchain.",
-      "tags": [
-        "blocks"
-      ],
+      "tags": ["blocks"],
       "result": {
         "type": "number",
         "description": "Block height",
@@ -272,9 +248,7 @@
     "block_get": {
       "summary": "Get a block by height or hash.",
       "description": "Gets a block with it's transaction hashes given a block height or block hash.",
-      "tags": [
-        "blocks"
-      ],
+      "tags": ["blocks"],
       "params": {
         "type": "object",
         "properties": {
@@ -310,9 +284,7 @@
     "account_get": {
       "summary": "Get account details.",
       "description": "Get account details for a given account address.",
-      "tags": [
-        "accounts"
-      ],
+      "tags": ["accounts"],
       "params": {
         "type": "object",
         "properties": {
@@ -321,9 +293,7 @@
             "description": "B58 address of the account to fetch"
           }
         },
-        "required": [
-          "address"
-        ]
+        "required": ["address"]
       },
       "result": {
         "type": "object",
@@ -413,9 +383,7 @@
     "transaction_get": {
       "summary": "Get transaction details.",
       "description": "Get details for a given transaction hash.",
-      "tags": [
-        "transactions"
-      ],
+      "tags": ["transactions"],
       "params": {
         "type": "object",
         "properties": {
@@ -424,9 +392,7 @@
             "description": "B64 hash of the transaction to fetch"
           }
         },
-        "required": [
-          "hash"
-        ]
+        "required": ["hash"]
       },
       "result": {
         "$ref": "#/definitions/transaction"
@@ -445,9 +411,7 @@
     "oracle_price_current": {
       "summary": "Gets the current oracle price.",
       "description": "Gets the oracle price at the current height of the blockchain.",
-      "tags": [
-        "oracles"
-      ],
+      "tags": ["oracles"],
       "result": {
         "$ref": "#/definitions/oracle_price"
       }
@@ -455,9 +419,7 @@
     "oracle_price_get": {
       "summary": "Gets an oracle price at a height.",
       "description": "Gets the oracle price at the given height of the blockchain (if known).",
-      "tags": [
-        "oracles"
-      ],
+      "tags": ["oracles"],
       "params": {
         "type": "object",
         "properties": {
@@ -466,9 +428,7 @@
             "description": "Block height to get the oracle price for."
           }
         },
-        "required": [
-          "height"
-        ]
+        "required": ["height"]
       },
       "result": {
         "$ref": "#/definitions/oracle_price"
@@ -477,9 +437,7 @@
     "pending_transaction_get": {
       "summary": "Get a pending transaction.",
       "description": "Get the previously submitted transaction with status.",
-      "tags": [
-        "pending transactions"
-      ],
+      "tags": ["pending transactions"],
       "params": {
         "type": "object",
         "properties": {
@@ -489,9 +447,7 @@
             "example": "xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs"
           }
         },
-        "required": [
-          "hash"
-        ]
+        "required": ["hash"]
       },
       "result": {
         "$ref": "#/definitions/pending_transaction"
@@ -506,9 +462,7 @@
     "pending_transaction_status": {
       "summary": "Get pending transaction status.",
       "description": "Get the status a previously submitted transaction.",
-      "tags": [
-        "pending transactions"
-      ],
+      "tags": ["pending transactions"],
       "params": {
         "type": "object",
         "properties": {
@@ -518,9 +472,7 @@
             "example": "xG-KdomBEdp4gTiJO1Riif92DoMd5hPxadcSci05pIs"
           }
         },
-        "required": [
-          "hash"
-        ]
+        "required": ["hash"]
       },
       "result": {
         "type": "string",
@@ -537,9 +489,7 @@
     "pending_transaction_submit": {
       "summary": "Submit a transaction to the pending queue.",
       "description": "Submits a pending transaction to the pending queue. The transactions needs to be in a blockchain_txn envelope and base64 encoded",
-      "tags": [
-        "pending transactions"
-      ],
+      "tags": ["pending transactions"],
       "params": {
         "type": "object",
         "properties": {
@@ -549,9 +499,7 @@
             "example": "QoWBCIe..."
           }
         },
-        "required": [
-          "txn"
-        ]
+        "required": ["txn"]
       },
       "result": {
         "$ref": "#/definitions/transaction"
@@ -566,9 +514,7 @@
     "pending_transaction_verify": {
       "summary": "Verify a transaction prior to submitting to the pending queue.",
       "description": "Verifies a transaction prior to submitting to the pending queue. The transactions needs to be in a blockchain_txn envelope and base64 encoded. Result returns \"valid\" if the transaction is valid; otherwise, the error message is present.",
-      "tags": [
-        "pending transactions"
-      ],
+      "tags": ["pending transactions"],
       "params": {
         "type": "object",
         "properties": {
@@ -578,9 +524,7 @@
             "example": "QoWBCIe..."
           }
         },
-        "required": [
-          "txn"
-        ]
+        "required": ["txn"]
       },
       "result": "string",
       "errors": [
@@ -593,9 +537,7 @@
     "implicit_burn_get": {
       "summary": "Gets an implicit burn for a transaction hash.",
       "description": "Gets an implicit burn for a transaction hash. Returns amount of HNT burned for a DC fee.",
-      "tags": [
-        "transactions"
-      ],
+      "tags": ["transactions"],
       "params": {
         "type": "object",
         "properties": {
@@ -605,9 +547,7 @@
             "example": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9"
           }
         },
-        "required": [
-          "hash"
-        ]
+        "required": ["hash"]
       },
       "result": {
         "$ref": "#/definitions/implicit_burn"
@@ -622,9 +562,7 @@
     "htlc_get": {
       "summary": "Gets HTLC details for an HTLC address.",
       "description": "Gets HTLC details for an HTLC address. If an HTLC was redeemed, it will also show the redemption height.",
-      "tags": [
-        "htlc"
-      ],
+      "tags": ["htlc"],
       "params": {
         "type": "object",
         "properties": {
@@ -634,9 +572,7 @@
             "example": "13BnsQ6rZVHXHxT8tgYX6njGxppkVEEcAxDdHV51Vwikrh8XBP9"
           }
         },
-        "required": [
-          "address"
-        ]
+        "required": ["address"]
       },
       "result": {
         "$ref": "#/definitions/htlc_receipt"
@@ -651,9 +587,7 @@
     "wallet_create": {
       "summary": "Create a new wallet.",
       "description": "Creates a new wallet, encrypted with the given password. The wallet is locked after creation.",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "params": {
         "type": "object",
         "properties": {
@@ -663,9 +597,7 @@
             "example": "a password"
           }
         },
-        "required": [
-          "password"
-        ]
+        "required": ["password"]
       },
       "result": {
         "type": "string",
@@ -676,9 +608,7 @@
     "wallet_delete": {
       "summary": "Delets a wallet.",
       "description": "Permanently removes the wallet from the database.",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "params": {
         "type": "object",
         "properties": {
@@ -688,9 +618,7 @@
             "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
           }
         },
-        "required": [
-          "address"
-        ]
+        "required": ["address"]
       },
       "result": {
         "type": "boolean",
@@ -701,26 +629,20 @@
     "wallet_list": {
       "summary": "List all wallets.",
       "description": "Lists the public keys of all wallets.",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "result": {
         "type": "array",
         "items": {
           "type": "string",
           "description": "The B58 encoded public address of a wallet"
         },
-        "example": [
-          "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
-        ]
+        "example": ["13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"]
       }
     },
     "wallet_unlock": {
       "summary": "Unlock a wallet for signing.",
       "description": "Unlock a wallet for signing. The wallet will be unlocked for 60 seonds.",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "params": {
         "type": "object",
         "properties": {
@@ -735,10 +657,7 @@
             "example": "a password"
           }
         },
-        "required": [
-          "address",
-          "password"
-        ]
+        "required": ["address", "password"]
       },
       "result": {
         "type": "boolean",
@@ -755,9 +674,7 @@
     "wallet_lock": {
       "summary": "Lock a wallet.",
       "description": "Locks a previously unlocked wallet.",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "params": {
         "type": "object",
         "properties": {
@@ -767,9 +684,7 @@
             "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
           }
         },
-        "required": [
-          "address"
-        ]
+        "required": ["address"]
       },
       "result": {
         "type": "boolean",
@@ -780,9 +695,7 @@
     "wallet_is_locked": {
       "summary": "Checks if a wallet is locked.",
       "description": "Checks if a wallet is unlocked.",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "params": {
         "type": "object",
         "properties": {
@@ -792,9 +705,7 @@
             "example": "13Ya3s4k8dsbd1dey6dmiYbwk4Dk1MRFCi3RBQ7nwKnSZqnYoW5"
           }
         },
-        "required": [
-          "address"
-        ]
+        "required": ["address"]
       },
       "result": {
         "type": "boolean",
@@ -805,9 +716,7 @@
     "wallet_pay": {
       "summary": "Send a payment to another account.",
       "description": "Sends a single payment in bones to a given account address. Note that 1 HNT it 100_000_000 bones",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "params": {
         "type": "object",
         "properties": {
@@ -842,10 +751,7 @@
             "example": 422
           }
         },
-        "required": [
-          "address",
-          "payee"
-        ]
+        "required": ["address", "payee"]
       },
       "result": {
         "$ref": "#/definitions/transaction"
@@ -860,9 +766,7 @@
     "wallet_pay_multi": {
       "summary": "Send multiple paymens in a single transation.",
       "description": "Sends multiple payments in bones to one or more payees. Note that 1 HNT it 100_000_000 bones",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "params": {
         "type": "object",
         "properties": {
@@ -892,15 +796,12 @@
                   "type": "boolean",
                   "description": "If true, send entire wallet balance rather than specific amount. Only one payment entry per token type can have \"max\" set to true.",
                   "example": "false"
-                },
+                }
               }
             }
           }
         },
-        "required": [
-          "address",
-          "payments"
-        ]
+        "required": ["address", "payments"]
       },
       "result": {
         "$ref": "#/definitions/transaction"
@@ -915,9 +816,7 @@
     "wallet_import": {
       "summary": "Import an encrypted wallet.",
       "description": "Import an encrypted wallet into the wallet database. The password is only used to verify that the wallet can be unlocked and is not stored.",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "params": {
         "type": "object",
         "properties": {
@@ -931,10 +830,7 @@
             "description": "Path to the file to import the wallet from"
           }
         },
-        "required": [
-          "password",
-          "path"
-        ]
+        "required": ["password", "path"]
       },
       "result": {
         "type": "string",
@@ -954,9 +850,7 @@
     "wallet_export": {
       "summary": "Export an encrypted wallet to a given path.",
       "description": "Exports an encrypted wallet to the given path.",
-      "tags": [
-        "wallets"
-      ],
+      "tags": ["wallets"],
       "params": {
         "type": "object",
         "properties": {
@@ -969,13 +863,32 @@
             "description": "Path to the file to save the wallet to"
           }
         },
-        "required": [
-          "address",
-          "path"
-        ]
+        "required": ["address", "path"]
       },
-      "result": {
-        "$ref": "#/definitions/transaction"
+      "errors": [
+        {
+          "code": -100,
+          "description": "Wallet not found"
+        }
+      ]
+    },
+    "wallet_export_secret": {
+      "summary": "Export the secret key bytes for a wallet to a given path.",
+      "description": "Exports the secret keybytes of a given unlocked wallet to the given path.",
+      "tags": ["wallets"],
+      "params": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "B58 address of the wallet"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path to the file to save the export to"
+          }
+        },
+        "required": ["address", "path"]
       },
       "errors": [
         {
@@ -987,10 +900,7 @@
     "wallet_backup_list": {
       "summary": "Lists information on the list of backups in the given path.",
       "description": "Backup list information includes the backup ID, size, and the time the backup was created.",
-      "tags": [
-        "wallets",
-        "backups"
-      ],
+      "tags": ["wallets", "backups"],
       "params": {
         "type": "object",
         "properties": {
@@ -999,9 +909,7 @@
             "description": "Path to the backup folder"
           }
         },
-        "required": [
-          "path"
-        ]
+        "required": ["path"]
       },
       "result": {
         "type": "array",
@@ -1013,10 +921,7 @@
     "wallet_backup_create": {
       "summary": "Creates a backup of the wallet database.",
       "description": "Creates a backup of the backup database in the given path.",
-      "tags": [
-        "wallets",
-        "backups"
-      ],
+      "tags": ["wallets", "backups"],
       "params": {
         "type": "object",
         "properties": {
@@ -1029,10 +934,7 @@
             "description": "Maximum number of backups to maintain in the folder"
           }
         },
-        "required": [
-          "path",
-          "max_backups"
-        ]
+        "required": ["path", "max_backups"]
       },
       "result": {
         "$ref": "#/definitions/backup_info"
@@ -1041,10 +943,7 @@
     "wallet_backup_delete": {
       "summary": "Delete a backup.",
       "description": "Delete the backup with the given ID from the given backup path.",
-      "tags": [
-        "wallets",
-        "backups"
-      ],
+      "tags": ["wallets", "backups"],
       "params": {
         "type": "object",
         "properties": {
@@ -1057,10 +956,7 @@
             "description": "Backup ID to delete"
           }
         },
-        "required": [
-          "path",
-          "backup_id"
-        ]
+        "required": ["path", "backup_id"]
       },
       "result": {
         "type": "boolean",
@@ -1076,10 +972,7 @@
     "wallet_backup_restore": {
       "summary": "Restore the wallet database.",
       "description": "Restores the wallet database from the backup ID in the given backup folder.",
-      "tags": [
-        "wallets",
-        "backups"
-      ],
+      "tags": ["wallets", "backups"],
       "params": {
         "type": "object",
         "properties": {
@@ -1092,10 +985,7 @@
             "description": "Backup ID to restore from"
           }
         },
-        "required": [
-          "path",
-          "backup_id"
-        ]
+        "required": ["path", "backup_id"]
       },
       "result": {
         "type": "boolean",

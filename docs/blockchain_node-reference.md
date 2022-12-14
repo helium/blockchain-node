@@ -29,6 +29,7 @@ This api follows the json-rpc 2.0 specification. More information available at h
 - [wallet_pay_multi](#wallet_pay_multi)
 - [wallet_import](#wallet_import)
 - [wallet_export](#wallet_export)
+- [wallet_export_secret](#wallet_export_secret)
 - [wallet_backup_list](#wallet_backup_list)
 - [wallet_backup_create](#wallet_backup_create)
 - [wallet_backup_delete](#wallet_backup_delete)
@@ -1281,17 +1282,6 @@ Exports an encrypted wallet to the given path.
 | params.address | string |             | B58 address of the payer wallet        |
 | params.path    | string |             | Path to the file to save the wallet to |
 
-### Result
-
-| Name                        | Type   | Constraints | Description                                                                                           |
-| --------------------------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------- |
-| result                      | object |             | Transaction details. The exact fields returned depend on the transaction type returned in the result. |
-| result.hash                 | string |             | B64 hash of the transaction                                                                           |
-| result.type                 | string |             | The type of the transaction                                                                           |
-| result?.implicit_burn       | object |             | Implicit burn details                                                                                 |
-| result?.implicit_burn.fee   | number |             | Amount of HNT (in bones) burned for the fee of the corresponding transaction                          |
-| result?.implicit_burn.payer | string |             | Address of the account that paid the fee                                                              |
-
 ### Errors
 
 | Code | Message | Description      |
@@ -1316,13 +1306,53 @@ Exports an encrypted wallet to the given path.
 ```json
 {
   "jsonrpc": "2.0",
+  "id": "1234567890"
+}
+```
+
+<a name="wallet_export_secret"></a>
+
+## wallet_export_secret
+
+Export the secret key bytes for a wallet to a given path.
+
+### Description
+
+Exports the secret keybytes of a given unlocked wallet to the given path.
+
+### Parameters
+
+| Name           | Type   | Constraints | Description                            |
+| -------------- | ------ | ----------- | -------------------------------------- |
+| params         | object |             |                                        |
+| params.address | string |             | B58 address of the wallet              |
+| params.path    | string |             | Path to the file to save the export to |
+
+### Errors
+
+| Code | Message | Description      |
+| ---- | ------- | ---------------- |
+| -100 |         | Wallet not found |
+
+### Examples
+
+#### Request
+
+```json
+{
+  "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {
-    "implicit_burn": {
-      "fee": 1401125,
-      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
-    }
-  }
+  "method": "wallet_export_secret",
+  "params": {}
+}
+```
+
+#### Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1234567890"
 }
 ```
 
