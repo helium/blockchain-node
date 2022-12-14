@@ -71,7 +71,7 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
             Ledger = blockchain:ledger(Chain),
             {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
 
-            InteractiveBlock = case ?get_var(?hip17_interactivity_blocks, Ledger) of
+            InteractiveBlock = case blockchain:config(?hip17_interactivity_blocks, Ledger) of
                                    {ok, V} -> V;
                                    {error, not_found} -> 0
                                end,
@@ -81,9 +81,14 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
                     fun({Addr, BinGw}, {CountAcc, GwAcc, StreamAcc}) ->
                         Gw = blockchain_ledger_gateway_v2:deserialize(BinGw),
                         Loc = blockchain_ledger_gateway_v2:location(Gw),
-                        LastBeacon = case blockchain_ledger_v1:find_gateway_last_beacon(Addr, Ledger) of
-                                         {ok, LB} -> LB;
-                                         {error, _} -> undefined
+                        LastBeacon = case blockchain:config(?poc_challenger_type, Ledger) of
+                                       {ok, oracle} ->
+                                           case blockchain_ledger_v1:find_gateway_last_beacon(Addr, Ledger) of
+                                               {ok, LB} -> LB;
+                                               {error, _} -> undefined
+                                           end;
+                                       _ ->
+                                           blockchain_ledger_gateway_v2:last_poc_challenge(Gw)
                                      end,
                         case Loc /= undefined andalso (LastBeacon /= undefined andalso (Height - LastBeacon) =< InteractiveBlock) of
                             true ->
@@ -103,7 +108,7 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
                                       }}},
                                 GwAcc1 = [GwResp | GwAcc],
                                 RespLen = length(GwAcc1),
-                                case RespLen >= ?GW_STREAM_BATCH_SIZE of
+                                case RespLen >= BatchSize of
                                     true ->
                                         Resp = #follower_gateway_stream_resp_v1_pb{ gateways = GwAcc1 },
                                         StreamAcc1 = grpcbox_stream:send(false, Resp, StreamAcc),
