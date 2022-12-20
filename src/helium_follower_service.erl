@@ -15,7 +15,8 @@
          txn_stream/2,
          find_gateway/2,
          subnetwork_last_reward_height/2,
-         active_gateways/2
+         active_gateways/2,
+         query_balance/2
         ]).
 
 -export([init/2, handle_info/2]).
@@ -140,6 +141,12 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
 active_gateways(_Msg, StreamState) ->
     lager:warning("unhandled grpc msg ~p", [_Msg]),
     {ok, StreamState}.
+
+-spec query_balance(ctx:ctx(), follower_pb:follower_balance_req_v1_pb()) ->
+    {ok, follower_pb:follower_balance_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+query_balance(Ctx, Req) ->
+    Chain = blockchain_worker:cached_blockchain(),
+    query_balance(Chain, Ctx, Req).
 
 -spec init(atom(), grpcbox_stream:t()) -> grpcbox_stream:t().
 init(_RPC, StreamState) ->
@@ -274,6 +281,38 @@ subnetwork_last_reward_height(Chain, Ctx, Req) ->
             {ok, #follower_subnetwork_last_reward_height_resp_v1_pb{height = CurrentHeight, reward_height = LastRewardHt}, Ctx};
         _ -> {grpc_error, {grpcbox_stream:code_to_status(3), <<"unable to get retrieve subnetwork for requested token">>}}
     end.
+
+-spec query_balance(blockchain:chain() | undefined, ctx:ctx(), follower_pb:follower_balance_req_v1_pb()) ->
+    {ok, follower_pb:follower_balance_resp_v1_pb(), ctx:ctx()} | grpcbox_stream:grpc_error_response().
+query_balance(undefined = _Chain, _Ctx, _Req) ->
+    lager:debug("chain not ready, returning error response for msg ~p", [_Req]),
+    {grpc_error, {grpcbox_stream:code_to_status(14), <<"temporarily unavailable">>}};
+query_balance(Chain, Ctx, Req) ->
+    Ledger = blockchain:ledger(Chain),
+    Addresses = Req#follower_balance_req_v1_pb.addresses,
+    {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
+    %% iterate over the account keys submitted in the request and retrieve
+    %% current balance for each
+    Res =
+        lists:map(
+            fun(Key) ->
+                try
+                    case
+                        blockchain_ledger_v1:find_dc_entry(Key, Ledger)
+                    of
+                        {ok, Entry} ->
+                            Bal = blockchain_ledger_data_credits_entry_v1:balance(Entry),
+                            #account_balance_pb{address = Key, balance = Bal};
+                        {error, _} ->
+                            #account_balance_pb{address = Key, balance = undefined}
+                    end
+                catch
+                    _:_ -> #account_balance_pb{address = Key, balance = undefined}
+                end
+            end,
+            Addresses
+        ),
+    {ok, #follower_balance_resp_v1_pb{height = Height, balances = Res}, Ctx}.
 
 -spec process_past_blocks(Height      :: pos_integer(),
                           TxnHash     :: binary(),
