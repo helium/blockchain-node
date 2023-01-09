@@ -70,27 +70,13 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
         _ ->
             Ledger = blockchain:ledger(Chain),
             {ok, Height} = blockchain_ledger_v1:current_height(Ledger),
-
-            InteractiveBlock = case blockchain:config(?hip17_interactivity_blocks, Ledger) of
-                                   {ok, V} -> V;
-                                   {error, not_found} -> 0
-                               end,
             {NumGateways, FinalGws, StreamState1} =
                 blockchain_ledger_v1:cf_fold(
                     active_gateways,
                     fun({Addr, BinGw}, {CountAcc, GwAcc, StreamAcc}) ->
                         Gw = blockchain_ledger_gateway_v2:deserialize(BinGw),
                         Loc = blockchain_ledger_gateway_v2:location(Gw),
-                        LastBeacon = case blockchain:config(?poc_challenger_type, Ledger) of
-                                       {ok, oracle} ->
-                                           case blockchain_ledger_v1:find_gateway_last_beacon(Addr, Ledger) of
-                                               {ok, LB} -> LB;
-                                               {error, _} -> undefined
-                                           end;
-                                       _ ->
-                                           blockchain_ledger_gateway_v2:last_poc_challenge(Gw)
-                                     end,
-                        case Loc /= undefined andalso (LastBeacon /= undefined andalso (Height - LastBeacon) =< InteractiveBlock) of
+                        case Loc /= undefined of
                             true ->
                                 Region = case blockchain_region_v1:h3_to_region(Loc, Ledger) of
                                              {ok, R} -> normalize_region(R);
