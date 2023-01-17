@@ -53,7 +53,12 @@ follower_height(#state{db = DB, default = DefaultCF}) ->
         {error, _} = Error -> ?jsonrpc_error(Error)
     end.
 
-load_chain(_Chain, State = #state{}) ->
+load_chain(Chain, State = #state{db = DB, default = CF}) ->
+    {ok, Height} = blockchain:height(Chain),
+    case bn_db:get_follower_height(DB, CF) of
+        {ok, 0} -> bn_db:put_follower_height(DB, CF, Height);
+        _ -> ok
+    end,
     {ok, State}.
 
 load_block(_Hash, Block, _Sync, Ledger, State = #state{db = DB, default = DefaultCF}) ->
