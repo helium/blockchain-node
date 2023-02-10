@@ -224,8 +224,8 @@ find_gateway(Chain, Ctx, Req) ->
                 end,
             RegionParams =
                 case region_params_for_region(Region, Ledger) of
-                    {ok, Params} -> {ok, Params};
-                    {error, _} -> {ok, <<>>}
+                    {ok, Params} -> Params;
+                    {error, _} -> []
                 end,
             {ok,
                 #follower_gateway_resp_v1_pb{
