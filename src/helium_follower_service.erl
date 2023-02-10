@@ -222,6 +222,11 @@ find_gateway(Chain, Ctx, Req) ->
                             _ -> {h3:to_string(H3), undefined}
                         end
                 end,
+            RegionParams =
+                case region_params_for_region(Region, Ledger) of
+                    {ok, Params} -> {ok, Params};
+                    {error, _} -> {ok, <<>>}
+                end,
             {ok,
                 #follower_gateway_resp_v1_pb{
                     height = Height,
@@ -231,7 +236,10 @@ find_gateway(Chain, Ctx, Req) ->
                         owner = blockchain_ledger_gateway_v2:owner_address(GwInfo),
                         staking_mode = blockchain_ledger_gateway_v2:mode(GwInfo),
                         gain = blockchain_ledger_gateway_v2:gain(GwInfo),
-                        region = Region
+                        region = Region,
+                        region_params = #blockchain_region_params_v1_pb{
+                                region_params = RegionParams
+                            }
                     }}
                 },
                 Ctx};
@@ -369,3 +377,17 @@ is_blockchain_txn(Module) ->
 %% be compatible with the proto
 normalize_region(V) ->
     list_to_atom(string:to_upper(string:slice(atom_to_list(V), 7))).
+
+-spec region_params_for_region(atom(), blockchain_ledger_v1:ledger()) ->
+    {ok, [blockchain_region_param_v1:region_param_v1()]} | {error, no_params_for_region}.
+region_params_for_region(Region, Ledger) ->
+    case blockchain_region_params_v1:for_region(Region, Ledger) of
+        {error, Reason} ->
+            lager:error(
+                "Could not get params for region: ~p, reason: ~p",
+                [Region, Reason]
+            ),
+            {error, no_params_for_region};
+        {ok, Params} ->
+            {ok, Params}
+    end.
