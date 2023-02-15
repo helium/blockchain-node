@@ -82,6 +82,11 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
                                              {ok, R} -> normalize_region(R);
                                              _ -> undefined
                                          end,
+                                RegionParams =
+                                    case region_params_for_region(Region, Ledger) of
+                                        {ok, Params} -> Params;
+                                        {error, _} -> []
+                                    end,
                                 GwResp = #follower_gateway_resp_v1_pb{
                                           height = Height,
                                           result = {info, #gateway_info_pb{
@@ -90,7 +95,10 @@ active_gateways(#follower_gateway_stream_req_v1_pb{batch_size = BatchSize} = _Ms
                                               owner = blockchain_ledger_gateway_v2:owner_address(Gw),
                                               staking_mode = blockchain_ledger_gateway_v2:mode(Gw),
                                               gain = blockchain_ledger_gateway_v2:gain(Gw),
-                                              region = Region
+                                              region = Region,
+                                              region_params = #blockchain_region_params_v1_pb{
+                                                    region_params = RegionParams
+                                                }
                                       }}},
                                 GwAcc1 = [GwResp | GwAcc],
                                 RespLen = length(GwAcc1),
