@@ -32,6 +32,10 @@ unlock(Address, Password) ->
 sign(Address, Txn) ->
     gen_server:call(?SERVER, {sign, Address, Txn}).
 
+-spec keys(libp2p_crypto:pubkey_bin()) -> {ok, lib2p_crypto:key_map()} | {error, term()}.
+keys(Address) ->
+    gen_server:call(?SERVER, {keys, Address}).
+
 -spec lock(libp2p_crypto:pubkey_bin()) -> ok.
 lock(Address) ->
     gen_server:call(?SERVER, {lock, Address}).
@@ -83,6 +87,13 @@ handle_call({lock, Address}, _From, State) ->
     {reply, ok, State#state{keys = maps:remove(Address, State#state.keys)}};
 handle_call({is_locked, Address}, _From, State) ->
     {reply, not maps:is_key(Address, State#state.keys), State};
+handle_call({keys, Address}, _From, State) ->
+    case maps:get(Address, State#state.keys, false) of
+        false ->
+            {reply, {error, not_found}, State};
+        KeyMap ->
+            {reply, {ok, KeyMap}}
+    end;
 handle_call({sign, Address, Txn}, _From, State) ->
     case maps:get(Address, State#state.keys, false) of
         false ->
@@ -264,6 +275,20 @@ handle_rpc(<<"wallet_export">>, {Param}) ->
                 {error, _} = Error -> ?jsonrpc_error(Error)
             end
     end;
+handle_rpc(<<"wallet_export_secret">>, {Param}) ->
+    Address = ?jsonrpc_b58_to_bin(<<"address">>, Param),
+    Path = ?jsonrpc_get_param(<<"path">>, Param),
+    case keys(Address) of
+        {error, not_found} ->
+            ?jsonrpc_error({not_found, "Wallet not found"});
+        {ok, #{secret := {ed25519, <<Secret/binary>>}}} ->
+            case file:write_file(Path, binary:bin_to_list(Secret)) of
+                ok -> true;
+                {error, _} = Error -> ?jsonrpc_error(Error)
+            end;
+        {ok, _} ->
+            ?jsonrpc_error({not_supported, "Wallet not ed25519"})
+    end;
 handle_rpc(<<"wallet_backup_list">>, {Param}) ->
     Path = ?jsonrpc_get_param(<<"path">>, Param),
     {ok, Engine} = rocksdb:open_backup_engine(binary_to_list(Path)),
@@ -335,14 +360,24 @@ jsonrpc_nonce_param(Param, Address, NonceType, Chain) ->
 
 -spec mk_payment_txn_v2(
     Payer :: libp2p_crypto:pubkey_bin(),
-    [{Payee :: libp2p_crypto:pubkey_bin(), Token :: atom(), Bones :: pos_integer() | undefined, Max :: boolean() }],
+    [
+        {
+            Payee :: libp2p_crypto:pubkey_bin(),
+            Token :: atom(),
+            Bones :: pos_integer() | undefined,
+            Max :: boolean()
+        }
+    ],
     Nonce :: non_neg_integer(),
     Chain :: blockchain:blockchain()
 ) ->
     {ok, blockchain_txn:txn()} | {error, term()}.
 mk_payment_txn_v2(Payer, PaymentList, Nonce, Chain) ->
     try
-        Payments = [mk_payment(Payee, Token, Bones, Max) || {Payee, Token, Bones, Max} <- PaymentList],
+        Payments = [
+            mk_payment(Payee, Token, Bones, Max)
+         || {Payee, Token, Bones, Max} <- PaymentList
+        ],
         Txn = blockchain_txn_payment_v2:new(Payer, Payments, Nonce),
         TxnFee = blockchain_txn_payment_v2:calculate_fee(Txn, Chain),
         {ok, blockchain_txn_payment_v2:fee(Txn, TxnFee)}

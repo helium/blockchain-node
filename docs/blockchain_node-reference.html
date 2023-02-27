@@ -166,6 +166,9 @@
                 <a class="nav-link" href="#wallet_export">wallet_export</a>
               </li>
               <li class="nav-item">
+                <a class="nav-link" href="#wallet_export_secret">wallet_export_secret</a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link" href="#wallet_backup_list">wallet_backup_list</a>
               </li>
               <li class="nav-item">
@@ -2877,53 +2880,6 @@
                       </table>
                     </div>
                     
-                    <h5>Result</h5>
-                    <div class="table-responsive">
-                      <table class="table table-striped table-hover table-sm">
-                        <tr>
-                          <th>Name</th>
-                          <th>Type</th>
-                          <th>Constraints</th>
-                          <th>Description</th>
-                        </tr>
-                        <tr>
-                          <td>result</td>
-                          <td>object</td>
-                          <td></td>
-                          <td>Transaction details. The exact fields returned depend on the transaction type returned in the result.</td>
-                        </tr>
-                        <tr>
-                          <td>result.hash</td>
-                          <td>string</td>
-                          <td></td>
-                          <td>B64 hash of the transaction</td>
-                        </tr>
-                        <tr>
-                          <td>result.type</td>
-                          <td>string</td>
-                          <td></td>
-                          <td>The type of the transaction</td>
-                        </tr>
-                        <tr>
-                          <td>result?.implicit_burn</td>
-                          <td>object</td>
-                          <td></td>
-                          <td>Implicit burn details</td>
-                        </tr>
-                        <tr>
-                          <td>result?.implicit_burn.fee</td>
-                          <td>number</td>
-                          <td></td>
-                          <td>Amount of HNT (in bones) burned for the fee of the corresponding transaction</td>
-                        </tr>
-                        <tr>
-                          <td>result?.implicit_burn.payer</td>
-                          <td>string</td>
-                          <td></td>
-                          <td>Address of the account that paid the fee</td>
-                        </tr>
-                      </table>
-                    </div>
                     
                     <h5>Errors</h5>
                     <div class="table-responsive">
@@ -2955,13 +2911,101 @@
                     <h5>Response example</h5>
                     <pre class="bg-light">{
   "jsonrpc": "2.0",
+  "id": "1234567890"
+}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card method" id="wallet_export_secret">
+            <div
+              class="card-header text-light bg-dark"
+              data-toggle="collapse"
+              href="#wallet_export_secret-content"
+            >
+              <h4>
+                <span>wallet_export_secret</span>
+
+                <div class="float-right">
+                  <span class="badge badge-light">wallets</span>
+                </div>
+              </h4>
+            </div>
+
+            <div class="card-block collapse show" id="wallet_export_secret-content">
+              <p>Export the secret key bytes for a wallet to a given path.</p>
+              
+              <p>Exports the secret keybytes of a given unlocked wallet to the given path.</p>
+
+              <hr />
+
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-8 border-right">
+
+                    <h5>Parameters</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Constraints</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>params</td>
+                          <td>object</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td>params.address</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>B58 address of the wallet</td>
+                        </tr>
+                        <tr>
+                          <td>params.path</td>
+                          <td>string</td>
+                          <td></td>
+                          <td>Path to the file to save the export to</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    
+                    <h5>Errors</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover table-sm">
+                        <tr>
+                          <th>Code</th>
+                          <th>Message</th>
+                          <th>Description</th>
+                        </tr>
+                        <tr>
+                          <td>-100</td>
+                          <td></td>
+                          <td>Wallet not found</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                  </div>
+
+                  <div class="col-4">
+                    <h5>Request example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
   "id": "1234567890",
-  "result": {
-    "implicit_burn": {
-      "fee": 1401125,
-      "payer": "1b93cMbumsxd2qgahdn7dZ19rzNJ7KxEHsLfT4zQXiS9YnbR39F"
-    }
-  }
+  "method": "wallet_export_secret",
+  "params": {}
+}</pre>
+
+                    <h5>Response example</h5>
+                    <pre class="bg-light">{
+  "jsonrpc": "2.0",
+  "id": "1234567890"
 }</pre>
                   </div>
                 </div>
