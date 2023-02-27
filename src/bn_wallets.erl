@@ -92,7 +92,7 @@ handle_call({keys, Address}, _From, State) ->
         false ->
             {reply, {error, not_found}, State};
         KeyMap ->
-            {reply, {ok, KeyMap}}
+            {reply, {ok, KeyMap}, State}
     end;
 handle_call({sign, Address, Txn}, _From, State) ->
     case maps:get(Address, State#state.keys, false) of
