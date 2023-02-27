@@ -282,8 +282,12 @@ handle_rpc(<<"wallet_export_secret">>, {Param}) ->
         {error, not_found} ->
             ?jsonrpc_error({not_found, "Wallet not found"});
         {ok, #{secret := {ed25519, <<Secret/binary>>}}} ->
-            case file:write_file(Path, binary:bin_to_list(Secret)) of
-                ok -> true;
+            case jsone:try_encode(binary:bin_to_list(Secret), []) of
+                {ok, Json} ->
+                    case file:write_file(Path, Json) of
+                        ok -> true;
+                        {error, _} = Error -> ?jsonrpc_error(Error)
+                    end;
                 {error, _} = Error -> ?jsonrpc_error(Error)
             end;
         {ok, _} ->
