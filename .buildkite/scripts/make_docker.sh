@@ -4,7 +4,7 @@ set -euo pipefail
 
 REGISTRY_HOST="quay.io/team-helium/blockchain-node"
 BUILDER_IMAGE="erlang:24-alpine"
-RUNNER_IMAGE="alpine:3.16"
+RUNNER_IMAGE="alpine:3.17"
 
 BUILD_TARGET=$1
 VERSION=$VERSION_TAG
