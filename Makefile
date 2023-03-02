@@ -2,7 +2,7 @@
 
 REBAR=./rebar3
 BUILDER_IMAGE=erlang:24-alpine
-RUNNER_IMAGE=alpine:3.16
+RUNNER_IMAGE=alpine:3.17
 APP_VERSION=$$(git tag --points-at HEAD)
 
 OS_NAME=$(shell uname -s)
