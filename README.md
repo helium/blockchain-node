@@ -1,3 +1,7 @@
+# Archived
+
+This repository is no longer applicable after the migration to Solana
+
 # blockchain-node
 
 [![Build status](https://badge.buildkite.com/8f80e5ba2dd64290fb11c5126477a023b0ea75d35f08783085.svg?branch=master)](https://buildkite.com/helium/blockchain-node)
